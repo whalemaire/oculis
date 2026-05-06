@@ -3,6 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+export const metadata = {
+  title: 'Mon profil — Oculis',
+  description: 'Gérez votre profil et consultez l\'historique de vos scans sur Oculis.',
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const [notifications, setNotifications] = useState(true)

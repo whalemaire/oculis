@@ -124,6 +124,11 @@ const LeafletMap = dynamic(
   { ssr: false }
 )
 
+export const metadata = {
+  title: 'Oculis — Trouvez vos lunettes parfaites',
+  description: 'Scannez votre visage et trouvez les montures qui vous correspondent. Localisez les opticiens près de chez vous qui ont votre paire en stock.',
+}
+
 export default function OpticiansPage() {
   const router = useRouter()
   const [userType] = useState<null | 'user' | 'optician'>(null)

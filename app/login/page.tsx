@@ -5,6 +5,11 @@ import { useState } from 'react'
 
 type Tab = 'phone' | 'email'
 
+export const metadata = {
+  title: 'Connexion — Oculis',
+  description: 'Créez votre compte Oculis pour sauvegarder vos résultats et trouver vos lunettes près de chez vous.',
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<Tab>('phone')
