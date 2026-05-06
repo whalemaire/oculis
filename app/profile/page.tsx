@@ -2,27 +2,36 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
-export const metadata = {
-  title: 'Mon profil — Oculis',
-  description: 'Gérez votre profil et consultez l\'historique de vos scans sur Oculis.',
-}
+import { supabase } from '@/lib/supabase'
 
 export default function ProfilePage() {
   const router = useRouter()
   const [notifications, setNotifications] = useState(true)
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    router.push('/opticians')
+  }
 
   return (
     <main className="min-h-screen bg-[#F4F6F9]">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100">
         <span className="text-xl font-bold text-[#0A2540]">Mon profil</span>
-        <button
-          onClick={() => router.push('/opticians')}
-          className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
-        >
-          ← Retour à la map
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push('/opticians')}
+            className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+          >
+            ← Retour à la map
+          </button>
+          <button
+            onClick={signOut}
+            className="text-sm text-red-400 hover:text-red-500 font-medium transition-colors"
+          >
+            Se déconnecter
+          </button>
+        </div>
       </header>
 
       <div className="max-w-xl mx-auto px-5 py-6 space-y-4">

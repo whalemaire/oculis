@@ -57,11 +57,6 @@ const FRAMES = [
   },
 ]
 
-export const metadata = {
-  title: 'Mes résultats — Oculis',
-  description: 'Découvrez les montures recommandées selon la forme de votre visage et trouvez les opticiens près de vous.',
-}
-
 export default function ResultsPage() {
   const router = useRouter()
   const [showToast, setShowToast] = useState(false)

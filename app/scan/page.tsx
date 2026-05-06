@@ -5,11 +5,6 @@ import { useEffect, useRef, useState } from 'react'
 
 type CameraState = 'requesting' | 'active' | 'denied'
 
-export const metadata = {
-  title: 'Scanner mon visage — Oculis',
-  description: 'Analysez la forme de votre visage en quelques secondes pour obtenir des recommandations de montures personnalisées.',
-}
-
 export default function ScanPage() {
   const router = useRouter()
   const videoRef = useRef<HTMLVideoElement>(null)
