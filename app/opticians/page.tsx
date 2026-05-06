@@ -1,13 +1,16 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 
 const OPTICIANS = [
   {
     id: 1,
     name: 'Optique Lumière',
     address: '12 rue de Rivoli, Paris 1er',
+    lat: 48.8603,
+    lng: 2.3477,
     distance: '0.4 km',
     rating: 4.8,
     reviews: 124,
@@ -22,6 +25,8 @@ const OPTICIANS = [
     id: 2,
     name: 'Vision Plus Opticiens',
     address: '45 avenue Montaigne, Paris 8e',
+    lat: 48.8661,
+    lng: 2.3044,
     distance: '1.1 km',
     rating: 4.5,
     reviews: 89,
@@ -36,6 +41,8 @@ const OPTICIANS = [
     id: 3,
     name: 'Atelier du Regard',
     address: '8 rue des Martyrs, Paris 9e',
+    lat: 48.8798,
+    lng: 2.3450,
     distance: '1.9 km',
     rating: 4.2,
     reviews: 56,
@@ -50,6 +57,8 @@ const OPTICIANS = [
 
 const FILTERS = ['All', 'Rectangular', 'Aviator', 'Round', 'Cat-eye']
 
+type Optician = (typeof OPTICIANS)[number]
+
 function Stars({ rating }: { rating: number }) {
   return (
     <span className="flex items-center gap-0.5">
@@ -62,6 +71,59 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
+function LeafletMapInner({ opticians }: { opticians: Optician[] }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return
+
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    document.head.appendChild(link)
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const L = require('leaflet') as typeof import('leaflet')
+
+    // Fix webpack-broken default icon paths
+    delete (L.Icon.Default.prototype as any)._getIconUrl
+    L.Icon.Default.mergeOptions({
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    })
+
+    const map = L.map(containerRef.current).setView([48.8566, 2.3522], 13)
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map)
+
+    opticians.forEach((opt) => {
+      L.marker([opt.lat, opt.lng])
+        .addTo(map)
+        .bindPopup(`<b>${opt.name}</b><br/>${opt.address}`)
+    })
+
+    mapRef.current = map
+
+    return () => {
+      mapRef.current?.remove()
+      mapRef.current = null
+      document.head.removeChild(link)
+    }
+  }, [])
+
+  return <div ref={containerRef} className="w-full h-full" />
+}
+
+const LeafletMap = dynamic(
+  () => Promise.resolve({ default: LeafletMapInner }),
+  { ssr: false }
+)
+
 export default function OpticiansPage() {
   const router = useRouter()
   const [activeFilter, setActiveFilter] = useState('All')
@@ -72,7 +134,7 @@ export default function OpticiansPage() {
   return (
     <main className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-white z-10">
+      <header className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-white z-10 relative">
         <span className="text-xl font-bold text-[#0A2540]">Oculis</span>
         <div className="flex items-center gap-2">
           <button
@@ -183,47 +245,12 @@ export default function OpticiansPage() {
         </div>
 
         {/* Right panel — map or detail */}
-        <div className="flex-1 relative bg-[#F4F6F9]">
+        <div className="flex-1 relative">
 
-          {/* Pseudo-map with distance pins */}
+          {/* Leaflet map */}
           {!selected && (
-            <div className="w-full h-full flex items-center justify-center relative">
-              {/* Grid lines */}
-              <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#94a3b8" strokeWidth="0.5" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-              </svg>
-
-              {/* Distance pins */}
-              {[
-                { label: '0.4 km', top: '38%', left: '42%', color: '#1E3A8A' },
-                { label: '1.1 km', top: '55%', left: '60%', color: '#92400e' },
-                { label: '1.9 km', top: '28%', left: '65%', color: '#92400e' },
-              ].map((pin) => (
-                <div
-                  key={pin.label}
-                  className="absolute flex flex-col items-center"
-                  style={{ top: pin.top, left: pin.left }}
-                >
-                  <div
-                    className="px-2.5 py-1 rounded-full text-white text-xs font-bold shadow-lg"
-                    style={{ backgroundColor: pin.color }}
-                  >
-                    {pin.label}
-                  </div>
-                  <div className="w-0.5 h-3 mt-0.5" style={{ backgroundColor: pin.color }} />
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pin.color }} />
-                </div>
-              ))}
-
-              {/* User dot */}
-              <div className="absolute w-4 h-4 rounded-full bg-[#1E3A8A] border-2 border-white shadow-md" style={{ top: '50%', left: '45%' }} />
-
-              <p className="text-gray-300 text-sm select-none relative z-10 mt-32">Cliquer sur un opticien pour voir le détail</p>
+            <div className="absolute inset-0">
+              <LeafletMap opticians={OPTICIANS} />
             </div>
           )}
 
