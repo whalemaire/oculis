@@ -126,6 +126,7 @@ const LeafletMap = dynamic(
 
 export default function OpticiansPage() {
   const router = useRouter()
+  const [userType] = useState<null | 'user' | 'optician'>(null)
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
@@ -137,18 +138,38 @@ export default function OpticiansPage() {
       <header className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-white z-10 relative">
         <span className="text-xl font-bold text-[#0A2540]">Oculis</span>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push('/profile')}
-            className="border border-gray-200 text-[#0A2540] px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
-          >
-            Mon profil
-          </button>
-          <button
-            onClick={() => router.push('/scan')}
-            className="bg-[#1E3A8A] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#162d6b] transition-colors"
-          >
-            📷 Scan
-          </button>
+          {userType === 'optician' ? (
+            <button
+              onClick={() => router.push('/optician-dashboard')}
+              className="bg-[#1E3A8A] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#162d6b] transition-colors"
+            >
+              Mon espace
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => router.push('/scan')}
+                className="bg-[#1E3A8A] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#162d6b] transition-colors"
+              >
+                📷 Scan
+              </button>
+              {userType === 'user' ? (
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="border border-gray-200 text-[#0A2540] px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Mon profil
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push('/opticians-signup')}
+                  className="border border-[#1E3A8A] text-[#1E3A8A] px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-50 transition-colors"
+                >
+                  Vous êtes opticien ?
+                </button>
+              )}
+            </>
+          )}
         </div>
       </header>
 
