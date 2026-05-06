@@ -1,31 +1,302 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+
+const OPTICIANS = [
+  {
+    id: 1,
+    name: 'Optique Lumière',
+    address: '12 rue de Rivoli, Paris 1er',
+    distance: '0.4 km',
+    rating: 4.8,
+    reviews: 124,
+    match: 'perfect',
+    inStock: true,
+    open: true,
+    openUntil: '19:00',
+    frames: ['Rectangular', 'Aviator', 'Round'],
+    phone: '+33 1 42 36 12 34',
+  },
+  {
+    id: 2,
+    name: 'Vision Plus Opticiens',
+    address: '45 avenue Montaigne, Paris 8e',
+    distance: '1.1 km',
+    rating: 4.5,
+    reviews: 89,
+    match: 'partial',
+    inStock: true,
+    open: true,
+    openUntil: '20:00',
+    frames: ['Aviator', 'Cat-eye'],
+    phone: '+33 1 47 23 56 78',
+  },
+  {
+    id: 3,
+    name: 'Atelier du Regard',
+    address: '8 rue des Martyrs, Paris 9e',
+    distance: '1.9 km',
+    rating: 4.2,
+    reviews: 56,
+    match: 'partial',
+    inStock: false,
+    open: false,
+    openUntil: '18:30',
+    frames: ['Round', 'Rectangular'],
+    phone: '+33 1 53 16 89 00',
+  },
+]
+
+const FILTERS = ['All', 'Rectangular', 'Aviator', 'Round', 'Cat-eye']
+
+function Stars({ rating }: { rating: number }) {
+  return (
+    <span className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <svg key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-amber-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+    </span>
+  )
+}
 
 export default function OpticiansPage() {
   const router = useRouter()
+  const [activeFilter, setActiveFilter] = useState('All')
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+
+  const selected = OPTICIANS.find((o) => o.id === selectedId) ?? null
 
   return (
-    <main className="min-h-screen bg-white">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+    <main className="min-h-screen bg-white flex flex-col">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-white z-10">
         <span className="text-xl font-bold text-[#0A2540]">Oculis</span>
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push('/profile')}
-            className="border border-gray-200 text-[#0A2540] px-4 py-2 rounded-xl text-sm font-medium"
+            className="border border-gray-200 text-[#0A2540] px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             Mon profil
           </button>
           <button
             onClick={() => router.push('/scan')}
-            className="bg-[#1E3A8A] text-white px-4 py-2 rounded-xl text-sm font-medium"
+            className="bg-[#1E3A8A] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#162d6b] transition-colors"
           >
             📷 Scan
           </button>
         </div>
       </header>
-      <div className="flex items-center justify-center h-[calc(100vh-73px)]">
-        <p className="text-gray-400">Map des opticiens</p>
+
+      {/* Split layout */}
+      <div className="flex flex-1 min-h-0">
+
+        {/* Left panel */}
+        <div className="w-2/5 flex flex-col border-r border-gray-100 overflow-y-auto">
+          <div className="px-5 pt-5 pb-4 space-y-4">
+
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Search by district, name, or postal code..."
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#1E3A8A] transition-colors"
+            />
+
+            {/* Frame filters */}
+            <div className="flex flex-wrap gap-2">
+              {FILTERS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setActiveFilter(f)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    activeFilter === f
+                      ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            {/* Count */}
+            <p className="text-xs text-gray-500 font-medium">8 opticians · within 30 km</p>
+          </div>
+
+          {/* Optician cards */}
+          <div className="px-5 pb-5 space-y-3">
+            {OPTICIANS.map((opt) => (
+              <div
+                key={opt.id}
+                onClick={() => setSelectedId(opt.id === selectedId ? null : opt.id)}
+                className={`rounded-2xl border p-4 cursor-pointer transition-all ${
+                  selectedId === opt.id
+                    ? 'border-[#1E3A8A] bg-blue-50/40 shadow-sm'
+                    : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                }`}
+              >
+                {/* Name + badges */}
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <p className="font-bold text-[#0A2540] text-sm leading-tight">{opt.name}</p>
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      opt.match === 'perfect'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {opt.match === 'perfect' ? 'Perfect match' : 'Partial match'}
+                    </span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      opt.inStock ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {opt.inStock ? '✓ In stock' : 'Call to check'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Address */}
+                <p className="text-xs text-gray-400 mb-2">{opt.address}</p>
+
+                {/* Rating + open status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Stars rating={opt.rating} />
+                    <span className="text-xs text-gray-500">{opt.rating} ({opt.reviews})</span>
+                  </div>
+                  <span className={`text-[10px] font-medium ${opt.open ? 'text-green-600' : 'text-red-400'}`}>
+                    {opt.open ? `Open · until ${opt.openUntil}` : `Closed · opens 9:00`}
+                  </span>
+                </div>
+
+                {/* View store button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSelectedId(opt.id) }}
+                  className="mt-3 w-full text-center text-xs font-semibold text-[#1E3A8A] hover:underline"
+                >
+                  View store →
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right panel — map or detail */}
+        <div className="flex-1 relative bg-[#F4F6F9]">
+
+          {/* Pseudo-map with distance pins */}
+          {!selected && (
+            <div className="w-full h-full flex items-center justify-center relative">
+              {/* Grid lines */}
+              <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#94a3b8" strokeWidth="0.5" />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+              </svg>
+
+              {/* Distance pins */}
+              {[
+                { label: '0.4 km', top: '38%', left: '42%', color: '#1E3A8A' },
+                { label: '1.1 km', top: '55%', left: '60%', color: '#92400e' },
+                { label: '1.9 km', top: '28%', left: '65%', color: '#92400e' },
+              ].map((pin) => (
+                <div
+                  key={pin.label}
+                  className="absolute flex flex-col items-center"
+                  style={{ top: pin.top, left: pin.left }}
+                >
+                  <div
+                    className="px-2.5 py-1 rounded-full text-white text-xs font-bold shadow-lg"
+                    style={{ backgroundColor: pin.color }}
+                  >
+                    {pin.label}
+                  </div>
+                  <div className="w-0.5 h-3 mt-0.5" style={{ backgroundColor: pin.color }} />
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pin.color }} />
+                </div>
+              ))}
+
+              {/* User dot */}
+              <div className="absolute w-4 h-4 rounded-full bg-[#1E3A8A] border-2 border-white shadow-md" style={{ top: '50%', left: '45%' }} />
+
+              <p className="text-gray-300 text-sm select-none relative z-10 mt-32">Cliquer sur un opticien pour voir le détail</p>
+            </div>
+          )}
+
+          {/* Detail panel */}
+          {selected && (
+            <div className="h-full overflow-y-auto p-8">
+              <button
+                onClick={() => setSelectedId(null)}
+                className="text-sm text-gray-400 hover:text-gray-600 mb-6 flex items-center gap-1"
+              >
+                ← Retour à la carte
+              </button>
+
+              <div className="max-w-md space-y-6">
+                {/* Name + badges */}
+                <div>
+                  <h2 className="text-2xl font-bold text-[#0A2540] mb-2">{selected.name}</h2>
+                  <p className="text-gray-400 text-sm mb-3">{selected.address} · {selected.distance}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      selected.match === 'perfect' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {selected.match === 'perfect' ? '✓ Perfect match' : '~ Partial match'}
+                    </span>
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      selected.inStock ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {selected.inStock ? '✓ In stock' : 'Call to check stock'}
+                    </span>
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                      selected.open ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-400'
+                    }`}>
+                      {selected.open ? `Open until ${selected.openUntil}` : 'Closed'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Rating */}
+                <div className="flex items-center gap-2">
+                  <Stars rating={selected.rating} />
+                  <span className="text-sm font-semibold text-[#0A2540]">{selected.rating}</span>
+                  <span className="text-sm text-gray-400">({selected.reviews} reviews)</span>
+                </div>
+
+                {/* Frame styles */}
+                <div>
+                  <p className="text-sm font-semibold text-[#0A2540] mb-3">Available frame styles</p>
+                  <div className="flex gap-3">
+                    {selected.frames.map((frame) => (
+                      <div key={frame} className="flex flex-col items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-4 py-3">
+                        <div className="w-10 h-5 bg-gray-200 rounded" />
+                        <span className="text-xs text-gray-500">{frame}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <p className="text-sm text-gray-500">{selected.phone}</p>
+
+                {/* CTAs */}
+                <div className="flex flex-col gap-3">
+                  <button className="w-full bg-[#1E3A8A] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors">
+                    Reserve a fitting
+                  </button>
+                  <button className="w-full border border-gray-200 text-[#0A2540] py-3 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors">
+                    Get directions →
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )
