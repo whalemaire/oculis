@@ -11,6 +11,8 @@ export default function ScanPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [cameraState, setCameraState] = useState<CameraState>('requesting')
+  const [analyzing, setAnalyzing] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -42,15 +44,44 @@ export default function ScanPage() {
     }
   }, [])
 
-  function capture() {
+  async function capture() {
     const video = videoRef.current
     const canvas = canvasRef.current
     if (!video || !canvas) return
+
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
     canvas.getContext('2d')?.drawImage(video, 0, 0)
-    streamRef.current?.getTracks().forEach((t) => t.stop())
-    router.push('/results')
+
+    const base64 = canvas.toDataURL('image/jpeg', 0.9).split(',')[1]
+
+    setError('')
+    setAnalyzing(true)
+
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64 }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        if (data.error === 'no_face') {
+          setError('Aucun visage détecté — recentre ton visage')
+        } else {
+          setError('Une erreur est survenue — réessaie')
+        }
+        setAnalyzing(false)
+        return
+      }
+
+      streamRef.current?.getTracks().forEach((t) => t.stop())
+      router.push(`/results?shape=${data.faceShape}&confidence=${data.confidence}`)
+    } catch {
+      setError('Une erreur est survenue — réessaie')
+      setAnalyzing(false)
+    }
   }
 
   return (
@@ -143,15 +174,31 @@ export default function ScanPage() {
         {/* Hidden canvas for capture */}
         <canvas ref={canvasRef} className="hidden" />
 
+        {/* Error message */}
+        {error && (
+          <p className="text-xs text-red-500 text-center -mb-4">{error}</p>
+        )}
+
         {/* CTA */}
         <div className="flex flex-col items-center gap-3 w-full">
-          <button
-            onClick={capture}
-            disabled={cameraState !== 'active'}
-            className="w-full bg-[#1E3A8A] text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            📷 Scanner mon visage
-          </button>
+          {analyzing ? (
+            <div className="w-full bg-[#1E3A8A] text-white py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+              <span>Analyse en cours</span>
+              <span className="flex gap-0.5">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={capture}
+              disabled={cameraState !== 'active'}
+              className="w-full bg-[#1E3A8A] text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              📷 Scanner mon visage
+            </button>
+          )}
           <label className="text-sm text-gray-400 hover:text-gray-500 transition-colors cursor-pointer">
             ou uploader une photo
             <input type="file" accept="image/*" className="sr-only" onChange={() => router.push('/results')} />
