@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/app/components/AuthProvider'
@@ -127,11 +127,21 @@ const LeafletMap = dynamic(
 
 export default function OpticiansPage() {
   const router = useRouter()
+  const params = useSearchParams()
   const { session } = useAuth()
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedId, setSelectedId] = useState<number | null>(null)
 
-  const selected = OPTICIANS.find((o) => o.id === selectedId) ?? null
+  const framesParam = params.get('frames')
+  const scanFrames = framesParam ? framesParam.split(',') : []
+
+  const filteredOpticians = scanFrames.length > 0
+    ? OPTICIANS.filter((opt) => opt.frames.some((f) => scanFrames.some((sf) => sf.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(sf.toLowerCase()))))
+    : activeFilter === 'All'
+      ? OPTICIANS
+      : OPTICIANS.filter((opt) => opt.frames.includes(activeFilter))
+
+  const selected = filteredOpticians.find((o) => o.id === selectedId) ?? null
 
   return (
     <main className="min-h-screen bg-white flex flex-col">
@@ -162,6 +172,19 @@ export default function OpticiansPage() {
           )}
         </div>
       </header>
+
+      {/* Scan filter banner */}
+      {framesParam && (
+        <div className="flex items-center justify-between px-5 py-2 bg-blue-50 border-b border-blue-100 text-xs text-blue-700">
+          <span>Résultats filtrés pour ton scan · <span className="font-semibold">{framesParam}</span></span>
+          <button
+            onClick={() => router.push('/opticians')}
+            className="ml-3 text-blue-400 hover:text-blue-600 font-bold text-sm leading-none"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Split layout */}
       <div className="flex flex-1 min-h-0">
@@ -200,7 +223,7 @@ export default function OpticiansPage() {
 
           {/* Optician cards */}
           <div className="px-5 pb-5 space-y-3">
-            {OPTICIANS.map((opt) => (
+            {filteredOpticians.map((opt) => (
               <div
                 key={opt.id}
                 onClick={() => setSelectedId(opt.id === selectedId ? null : opt.id)}
