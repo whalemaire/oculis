@@ -131,6 +131,7 @@ export default function OpticiansPage() {
   const { session } = useAuth()
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   const framesParam = params.get('frames')
   const scanFrames = framesParam ? framesParam.split(',') : []
@@ -141,7 +142,18 @@ export default function OpticiansPage() {
       ? OPTICIANS
       : OPTICIANS.filter((opt) => opt.frames.includes(activeFilter))
 
-  const selected = filteredOpticians.find((o) => o.id === selectedId) ?? null
+  const selected = OPTICIANS.find((o) => o.id === selectedId) ?? null
+  const userType = (session ? 'user' : null) as 'user' | 'optician' | null
+
+  console.log('selectedId:', selectedId, 'selected:', selected)
+
+  const handleOpticianClick = (id: number) => {
+    if (!session) {
+      setShowAuthModal(true)
+      return
+    }
+    setSelectedId(id)
+  }
 
   return (
     <main className="min-h-screen bg-surface flex flex-col">
@@ -149,25 +161,50 @@ export default function OpticiansPage() {
       <header className="flex items-center justify-between px-6 py-3.5 border-b border-border bg-white z-10 relative">
         <span className="text-xl font-bold text-primary">Oculis</span>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push('/scan')}
-            className="bg-secondary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-alt transition-colors"
-          >
-            📷 Scan
-          </button>
-          {session ? (
+          {userType === null && (
+            <>
+              <button
+                onClick={() => router.push('/scan')}
+                className="bg-secondary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-alt transition-colors"
+              >
+                📷 Scan
+              </button>
+              <button
+                onClick={() => router.push('/login')}
+                className="border border-border text-primary px-4 py-2 rounded-xl text-sm font-medium hover:bg-surface transition-colors"
+              >
+                Se connecter
+              </button>
+              <button
+                onClick={() => router.push('/opticians-signup')}
+                className="border border-secondary text-secondary px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-lighter transition-colors"
+              >
+                Vous êtes opticien ?
+              </button>
+            </>
+          )}
+          {userType === 'user' && (
+            <>
+              <button
+                onClick={() => router.push('/scan')}
+                className="bg-secondary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-alt transition-colors"
+              >
+                📷 Scan
+              </button>
+              <button
+                onClick={() => router.push('/profile')}
+                className="border border-border text-primary px-4 py-2 rounded-xl text-sm font-medium hover:bg-surface transition-colors"
+              >
+                Mon profil
+              </button>
+            </>
+          )}
+          {userType === 'optician' && (
             <button
-              onClick={() => router.push('/profile')}
+              onClick={() => router.push('/optician-dashboard')}
               className="border border-border text-primary px-4 py-2 rounded-xl text-sm font-medium hover:bg-surface transition-colors"
             >
-              Mon profil
-            </button>
-          ) : (
-            <button
-              onClick={() => router.push('/opticians-signup')}
-              className="border border-secondary text-secondary px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-lighter transition-colors"
-            >
-              Vous êtes opticien ?
+              Mon espace
             </button>
           )}
         </div>
@@ -226,53 +263,48 @@ export default function OpticiansPage() {
             {filteredOpticians.map((opt) => (
               <div
                 key={opt.id}
-                onClick={() => setSelectedId(opt.id === selectedId ? null : opt.id)}
+                onClick={() => handleOpticianClick(opt.id)}
                 className={`rounded-card border p-4 cursor-pointer transition-all ${
                   selectedId === opt.id
-                    ? 'border-secondary bg-secondary-lighter/40 shadow-card'
-                    : 'border-border bg-white hover:border-muted hover:shadow-card'
+                    ? 'border-secondary bg-secondary-lighter/40 shadow-[inset_3px_0_0_0_#0A2540]'
+                    : 'border-border bg-white hover:-translate-y-px hover:shadow-panel'
                 }`}
               >
-                {/* Name + badges */}
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <p className="font-bold text-primary text-sm leading-tight">{opt.name}</p>
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-pill ${
-                      opt.match === 'perfect'
-                        ? 'bg-secondary-light text-secondary'
-                        : 'bg-accent-light text-accent-dark'
-                    }`}>
-                      {opt.match === 'perfect' ? 'Perfect match' : 'Partial match'}
-                    </span>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-pill ${
-                      opt.inStock ? 'bg-success-light text-success-dark' : 'bg-surface text-muted'
-                    }`}>
-                      {opt.inStock ? '✓ In stock' : 'Call to check'}
-                    </span>
-                  </div>
+                {/* Row 1 — dot + name + distance */}
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.match === 'perfect' ? 'bg-secondary' : 'bg-accent'}`} />
+                  <p className="font-bold text-primary text-sm leading-tight flex-1 truncate">{opt.name}</p>
+                  <span className="text-xs text-muted flex-shrink-0">{opt.distance}</span>
                 </div>
 
-                {/* Address */}
-                <p className="text-xs text-muted mb-2">{opt.address}</p>
+                {/* Row 2 — address */}
+                <p className="text-xs text-muted mb-2.5 pl-4 truncate">{opt.address}</p>
 
-                {/* Rating + open status */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Stars rating={opt.rating} />
-                    <span className="text-xs text-muted">{opt.rating} ({opt.reviews})</span>
-                  </div>
-                  <span className={`text-[10px] font-medium ${opt.open ? 'text-success' : 'text-accent'}`}>
-                    {opt.open ? `Open · until ${opt.openUntil}` : `Closed · opens 9:00`}
+                {/* Row 3 — stars + reviews + match badge */}
+                <div className="flex items-center gap-1.5 mb-2.5 pl-4">
+                  <Stars rating={opt.rating} />
+                  <span className="text-xs text-muted">{opt.rating} ({opt.reviews})</span>
+                  <span className={`ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-pill flex-shrink-0 ${
+                    opt.match === 'perfect'
+                      ? 'bg-secondary-light text-secondary'
+                      : 'bg-accent-light text-accent-dark'
+                  }`}>
+                    {opt.match === 'perfect' ? 'Perfect match' : 'Partial match'}
                   </span>
                 </div>
 
-                {/* View store button */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); setSelectedId(opt.id) }}
-                  className="mt-3 w-full text-center text-xs font-semibold text-secondary hover:underline"
-                >
-                  View store →
-                </button>
+                {/* Row 4 — open status + view store */}
+                <div className="flex items-center justify-between pl-4">
+                  <span className={`text-[10px] font-medium ${opt.open ? 'text-success' : 'text-red-400'}`}>
+                    {opt.open ? `Open · until ${opt.openUntil}` : `Closed · opens 9:00`}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleOpticianClick(opt.id) }}
+                    className="text-xs font-semibold text-secondary hover:underline flex-shrink-0"
+                  >
+                    View store →
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -281,84 +313,119 @@ export default function OpticiansPage() {
         {/* Right panel — map or detail */}
         <div className="flex-1 relative">
 
-          {/* Leaflet map */}
-          {!selected && (
-            <div className="absolute inset-0">
-              <LeafletMap opticians={OPTICIANS} />
-            </div>
-          )}
+          {/* Leaflet map — always visible */}
+          <div className="absolute inset-0">
+            <LeafletMap opticians={OPTICIANS} />
+          </div>
 
-          {/* Detail panel */}
+          {/* Detail drawer — overlays map */}
           {selected && (
-            <div className="h-full overflow-y-auto p-8">
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              width: '380px',
+              height: '100vh',
+              backgroundColor: 'white',
+              zIndex: 9999,
+              overflowY: 'auto',
+              boxShadow: '-4px 0 24px rgba(10,37,64,0.12)',
+              padding: '24px'
+            }}>
               <button
                 onClick={() => setSelectedId(null)}
-                className="text-sm text-muted hover:text-subtle mb-6 flex items-center gap-1"
+                className="text-sm"
+                style={{ marginBottom: '16px', color: '#64748B' }}
               >
                 ← Retour à la carte
               </button>
 
-              <div className="max-w-md space-y-6">
-                {/* Name + badges */}
-                <div>
-                  <h2 className="text-2xl font-bold text-primary mb-2">{selected.name}</h2>
-                  <p className="text-muted text-sm mb-3">{selected.address} · {selected.distance}</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-pill ${
-                      selected.match === 'perfect' ? 'bg-secondary-light text-secondary' : 'bg-accent-light text-accent-dark'
-                    }`}>
-                      {selected.match === 'perfect' ? '✓ Perfect match' : '~ Partial match'}
-                    </span>
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-pill ${
-                      selected.inStock ? 'bg-success-light text-success-dark' : 'bg-surface text-muted'
-                    }`}>
-                      {selected.inStock ? '✓ In stock' : 'Call to check stock'}
-                    </span>
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-pill ${
-                      selected.open ? 'bg-success-light text-success-dark' : 'bg-accent-light text-accent-dark'
-                    }`}>
-                      {selected.open ? `Open until ${selected.openUntil}` : 'Closed'}
-                    </span>
-                  </div>
-                </div>
+              <h2 className="text-2xl font-bold" style={{ color: '#0A2540', marginBottom: '4px' }}>
+                {selected.name}
+              </h2>
+              <p className="text-sm" style={{ color: '#64748B', marginBottom: '16px' }}>
+                {selected.address} · {selected.distance}
+              </p>
 
-                {/* Rating */}
-                <div className="flex items-center gap-2">
-                  <Stars rating={selected.rating} />
-                  <span className="text-sm font-semibold text-primary">{selected.rating}</span>
-                  <span className="text-sm text-muted">({selected.reviews} reviews)</span>
-                </div>
-
-                {/* Frame styles */}
-                <div>
-                  <p className="text-sm font-semibold text-primary mb-3">Available frame styles</p>
-                  <div className="flex gap-3">
-                    {selected.frames.map((frame) => (
-                      <div key={frame} className="flex flex-col items-center gap-1.5 bg-white border border-border rounded-xl px-4 py-3">
-                        <div className="w-10 h-5 bg-surface rounded" />
-                        <span className="text-xs text-muted">{frame}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <p className="text-sm text-muted">{selected.phone}</p>
-
-                {/* CTAs */}
-                <div className="flex flex-col gap-3">
-                  <button className="w-full bg-secondary text-white py-3 rounded-xl font-semibold text-sm hover:bg-secondary-alt transition-colors">
-                    Reserve a fitting
-                  </button>
-                  <button className="w-full border border-border text-primary py-3 rounded-xl font-semibold text-sm hover:bg-surface transition-colors">
-                    Get directions →
-                  </button>
-                </div>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <span className="text-xs font-medium" style={{ background: '#EEF2FF', color: '#1E3A8A', padding: '4px 12px', borderRadius: '100px' }}>
+                  ✓ Perfect match
+                </span>
+                <span className="text-xs font-medium" style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 12px', borderRadius: '100px' }}>
+                  ✓ In stock
+                </span>
+                <span className="text-xs font-medium" style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 12px', borderRadius: '100px' }}>
+                  Open until {selected.openUntil}
+                </span>
               </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <span style={{ color: '#F59E0B' }}>★★★★★</span>
+                <span style={{ fontWeight: '600', color: '#0A2540' }}>{selected.rating}</span>
+                <span className="text-sm" style={{ color: '#64748B' }}>({selected.reviews} reviews)</span>
+              </div>
+
+              <p className="text-xs font-medium" style={{ color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+                Available frame styles
+              </p>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                {selected.frames?.map((frame: string) => (
+                  <div key={frame} className="text-xs" style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 16px', color: '#0A2540' }}>
+                    {frame}
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-sm" style={{ color: '#0A2540', marginBottom: '24px' }}>{selected.phone}</p>
+
+              <button style={{ width: '100%', background: '#1E3A8A', color: 'white', padding: '14px', borderRadius: '12px', fontWeight: '600', marginBottom: '8px', border: 'none', cursor: 'pointer' }}>
+                Reserve a fitting
+              </button>
+              <button
+                onClick={() => window.open(`https://maps.google.com/?q=${selected.address}`, '_blank')}
+                style={{ width: '100%', background: 'white', color: '#0A2540', padding: '14px', borderRadius: '12px', fontWeight: '600', border: '1px solid #E2E8F0', cursor: 'pointer' }}
+              >
+                Get directions →
+              </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Auth modal — non-connected users */}
+      {showAuthModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-[9998]"
+            onClick={() => setShowAuthModal(false)}
+          />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white rounded-2xl p-8 max-w-sm w-full mx-4">
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 text-muted hover:text-subtle text-lg leading-none"
+            >
+              ×
+            </button>
+            <div className="text-center space-y-4">
+              <span className="text-4xl">🔒</span>
+              <h2 className="text-xl font-bold text-primary">Connecte-toi pour voir les opticiens</h2>
+              <p className="text-sm text-muted">Crée un compte gratuit pour accéder aux opticiens près de toi</p>
+              <button
+                onClick={() => router.push('/login')}
+                className="w-full bg-secondary text-white py-3 rounded-xl font-semibold text-sm hover:bg-secondary-alt transition-colors"
+              >
+                Se connecter
+              </button>
+              <button
+                onClick={() => router.push('/login')}
+                className="w-full text-sm text-secondary hover:underline"
+              >
+                Créer un compte
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   )
 }

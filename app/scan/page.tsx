@@ -85,13 +85,13 @@ export default function ScanPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white flex flex-col">
+    <main className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100">
-        <span className="text-xl font-bold text-[#0A2540]">Oculis</span>
+      <header className="flex items-center justify-between px-6 py-3.5 border-b border-border">
+        <span className="text-xl font-bold text-primary">Oculis</span>
         <button
           onClick={() => router.push('/opticians')}
-          className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+          className="text-sm text-muted hover:text-subtle flex items-center gap-1 transition-colors"
         >
           ← Retour
         </button>
@@ -108,14 +108,14 @@ export default function ScanPage() {
           ].map((item) => (
             <div key={item.title} className="flex flex-col items-center text-center gap-1.5">
               <span className="text-2xl">{item.icon}</span>
-              <p className="text-xs font-semibold text-[#0A2540] leading-tight">{item.title}</p>
-              <p className="text-[11px] text-gray-400 leading-tight">{item.desc}</p>
+              <p className="text-xs font-semibold text-primary leading-tight">{item.title}</p>
+              <p className="text-sm text-muted leading-tight">{item.desc}</p>
             </div>
           ))}
         </div>
 
         {/* Camera viewport */}
-        <div className="w-72 h-72 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 overflow-hidden relative flex items-center justify-center">
+        <div className="w-72 h-72 bg-surface rounded-3xl border-2 border-dashed border-border overflow-hidden relative flex items-center justify-center">
 
           {/* Live video */}
           {cameraState !== 'denied' && (
@@ -131,8 +131,8 @@ export default function ScanPage() {
           {/* Requesting state */}
           {cameraState === 'requesting' && (
             <div className="relative z-10 flex flex-col items-center gap-2">
-              <div className="w-6 h-6 border-2 border-[#1E3A8A] border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs text-gray-400">Accès caméra…</p>
+              <div className="w-6 h-6 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs text-muted">Accès caméra…</p>
             </div>
           )}
 
@@ -140,9 +140,9 @@ export default function ScanPage() {
           {cameraState === 'denied' && (
             <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center">
               <span className="text-3xl opacity-40">🚫</span>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed">
                 Accès caméra refusé —{' '}
-                <label className="text-[#1E3A8A] font-semibold cursor-pointer hover:underline">
+                <label className="text-secondary font-semibold cursor-pointer hover:underline">
                   Uploader une photo
                   <input type="file" accept="image/*" className="sr-only" onChange={() => router.push('/results')} />
                 </label>
@@ -182,7 +182,7 @@ export default function ScanPage() {
         {/* CTA */}
         <div className="flex flex-col items-center gap-3 w-full">
           {analyzing ? (
-            <div className="w-full bg-[#1E3A8A] text-white py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+            <div className="w-full bg-secondary text-white py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
               <span>Analyse en cours</span>
               <span className="flex gap-0.5">
                 <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -194,12 +194,12 @@ export default function ScanPage() {
             <button
               onClick={capture}
               disabled={cameraState !== 'active'}
-              className="w-full bg-[#1E3A8A] text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full bg-secondary text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-secondary-alt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               📷 Scanner mon visage
             </button>
           )}
-          <label className="text-sm text-gray-400 hover:text-gray-500 transition-colors cursor-pointer">
+          <label className="text-sm text-muted hover:text-subtle transition-colors cursor-pointer">
             ou uploader une photo
             <input type="file" accept="image/*" className="sr-only" onChange={() => router.push('/results')} />
           </label>
