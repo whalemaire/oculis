@@ -77,7 +77,7 @@ export default function ScanPage() {
       }
 
       streamRef.current?.getTracks().forEach((t) => t.stop())
-      router.push(`/results?shape=${data.faceShape}&confidence=${data.confidence}`)
+      router.push(`/results?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.ipd}&ratio=${data.ratio}`)
     } catch {
       setError('Une erreur est survenue — réessaie')
       setAnalyzing(false)

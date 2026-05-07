@@ -1,7 +1,83 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+
+const recommendations: Record<string, { name: string; score: number }[]> = {
+  oval: [
+    { name: 'Modernist Rectangular', score: 92 },
+    { name: 'Pilot Aviator', score: 86 },
+    { name: 'Round Académie', score: 78 },
+  ],
+  round: [
+    { name: 'Rectangular Bold', score: 94 },
+    { name: 'Wayfarer Classic', score: 88 },
+    { name: 'Cat-eye Modern', score: 75 },
+  ],
+  square: [
+    { name: 'Round Soft', score: 93 },
+    { name: 'Oval Vintage', score: 85 },
+    { name: 'Aviator Slim', score: 79 },
+  ],
+  oblong: [
+    { name: 'Wayfarer Large', score: 91 },
+    { name: 'Round Classic', score: 84 },
+    { name: 'Cat-eye Bold', score: 77 },
+  ],
+}
+
+const SVG_RECT = (
+  <svg width="96" height="40" viewBox="0 0 96 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="8" width="38" height="24" rx="4" stroke="#0A2540" strokeWidth="2.5" />
+    <rect x="54" y="8" width="38" height="24" rx="4" stroke="#0A2540" strokeWidth="2.5" />
+    <line x1="42" y1="20" x2="54" y2="20" stroke="#0A2540" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="0" y1="14" x2="4" y2="14" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
+    <line x1="92" y1="14" x2="96" y2="14" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+)
+
+const SVG_AVIATOR = (
+  <svg width="96" height="48" viewBox="0 0 96 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 16 Q4 36 23 36 Q42 36 42 20 Q42 8 23 8 Q4 8 4 16Z" stroke="#0A2540" strokeWidth="2.5" fill="none" />
+    <path d="M54 16 Q54 36 73 36 Q92 36 92 20 Q92 8 73 8 Q54 8 54 16Z" stroke="#0A2540" strokeWidth="2.5" fill="none" />
+    <line x1="42" y1="16" x2="54" y2="16" stroke="#0A2540" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="0" y1="12" x2="4" y2="14" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
+    <line x1="92" y1="14" x2="96" y2="12" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+)
+
+const SVG_ROUND = (
+  <svg width="96" height="44" viewBox="0 0 96 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="23" cy="22" r="18" stroke="#0A2540" strokeWidth="2.5" fill="none" />
+    <circle cx="73" cy="22" r="18" stroke="#0A2540" strokeWidth="2.5" fill="none" />
+    <line x1="41" y1="22" x2="55" y2="22" stroke="#0A2540" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="0" y1="16" x2="5" y2="18" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
+    <line x1="91" y1="18" x2="96" y2="16" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+)
+
+function framesvg(name: string) {
+  const n = name.toLowerCase()
+  if (n.includes('aviator') || n.includes('pilot')) return SVG_AVIATOR
+  if (n.includes('round') || n.includes('oval') || n.includes('académie')) return SVG_ROUND
+  return SVG_RECT
+}
+
+function frameTags(name: string): string[] {
+  const n = name.toLowerCase()
+  if (n.includes('aviator') || n.includes('pilot')) return ['Vintage', 'Iconique', 'Casual']
+  if (n.includes('round') || n.includes('oval')) return ['Artistique', 'Rétro', 'Doux']
+  if (n.includes('cat-eye')) return ['Mode', 'Audacieux', 'Féminin']
+  return ['Classique', 'Polyvalent', 'Business']
+}
+
+function frameDesc(name: string): string {
+  const n = name.toLowerCase()
+  if (n.includes('aviator') || n.includes('pilot')) return 'Style intemporel aux lentilles tombantes. Ajoute du caractère à votre visage.'
+  if (n.includes('round') || n.includes('oval')) return 'Forme douce et artistique qui contraste élégamment avec vos traits.'
+  if (n.includes('cat-eye')) return 'Monture rétro et audacieuse qui met en valeur le regard.'
+  return 'Structure nette et équilibrée qui souligne le regard avec élégance.'
+}
 
 const CELEBRITIES = [
   { initial: 'GC', name: 'George Clooney', job: 'Acteur' },
@@ -9,57 +85,19 @@ const CELEBRITIES = [
   { initial: 'RG', name: 'Ryan Gosling', job: 'Acteur' },
 ]
 
-const FRAMES = [
-  {
-    name: 'Rectangulaire',
-    score: 92,
-    description: 'Équilibre parfait pour les visages ovales. Structure nette qui souligne le regard.',
-    tags: ['Classique', 'Business', 'Polyvalent'],
-    svg: (
-      <svg width="96" height="40" viewBox="0 0 96 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="8" width="38" height="24" rx="4" stroke="#0A2540" strokeWidth="2.5" />
-        <rect x="54" y="8" width="38" height="24" rx="4" stroke="#0A2540" strokeWidth="2.5" />
-        <line x1="42" y1="20" x2="54" y2="20" stroke="#0A2540" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="0" y1="14" x2="4" y2="14" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
-        <line x1="92" y1="14" x2="96" y2="14" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Aviateur',
-    score: 78,
-    description: 'Style intemporel aux lentilles tombantes. Ajoute du caractère à un visage harmonieux.',
-    tags: ['Vintage', 'Casual', 'Iconique'],
-    svg: (
-      <svg width="96" height="48" viewBox="0 0 96 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4 16 Q4 36 23 36 Q42 36 42 20 Q42 8 23 8 Q4 8 4 16Z" stroke="#0A2540" strokeWidth="2.5" fill="none" />
-        <path d="M54 16 Q54 36 73 36 Q92 36 92 20 Q92 8 73 8 Q54 8 54 16Z" stroke="#0A2540" strokeWidth="2.5" fill="none" />
-        <line x1="42" y1="16" x2="54" y2="16" stroke="#0A2540" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="0" y1="12" x2="4" y2="14" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
-        <line x1="92" y1="14" x2="96" y2="12" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    name: 'Ronde',
-    score: 65,
-    description: 'Contraste doux et artistique. Fonctionne bien mais adoucit davantage les traits.',
-    tags: ['Artistique', 'Rétro', 'Doux'],
-    svg: (
-      <svg width="96" height="44" viewBox="0 0 96 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="23" cy="22" r="18" stroke="#0A2540" strokeWidth="2.5" fill="none" />
-        <circle cx="73" cy="22" r="18" stroke="#0A2540" strokeWidth="2.5" fill="none" />
-        <line x1="41" y1="22" x2="55" y2="22" stroke="#0A2540" strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="0" y1="16" x2="5" y2="18" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
-        <line x1="91" y1="18" x2="96" y2="16" stroke="#0A2540" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-]
 
 export default function ResultsPage() {
   const router = useRouter()
+  const params = useSearchParams()
   const [showToast, setShowToast] = useState(false)
+
+  const shape = params.get('shape') ?? 'oval'
+  const confidence = params.get('confidence') ?? '85'
+  const ipd = params.get('ipd') ?? '64'
+  const ratio = params.get('ratio') ?? '1.10'
+  const shapeLabel = shape.charAt(0).toUpperCase() + shape.slice(1) + ' Face'
+  const frames = recommendations[shape] ?? recommendations.oval
+  const topMatch = frames[0]
 
   useEffect(() => {
     const show = setTimeout(() => setShowToast(true), 1000)
@@ -85,14 +123,14 @@ export default function ResultsPage() {
         {/* Section 1 — Forme du visage */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center text-center gap-3">
           <span className="bg-[#1E3A8A] text-white text-xs font-bold px-4 py-1.5 rounded-full tracking-wide">
-            Visage Ovale
+            {shapeLabel}
           </span>
-          <p className="text-6xl font-extrabold text-[#1E3A8A] leading-none">92%</p>
+          <p className="text-6xl font-extrabold text-[#1E3A8A] leading-none">{confidence}%</p>
           <p className="text-sm text-gray-400">Basé sur 106 points de détection</p>
 
           {/* Landmark pills */}
           <div className="flex items-center gap-2 flex-wrap justify-center">
-            {['62 landmarks', 'Symmetry 0.94', 'PD 64 mm'].map((pill) => (
+            {[`106 landmarks`, `Ratio ${ratio}`, `PD ${ipd} mm`].map((pill) => (
               <span key={pill} className="text-[11px] font-medium bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
                 {pill}
               </span>
@@ -132,14 +170,14 @@ export default function ResultsPage() {
             Montures recommandées
           </p>
           <div className="space-y-3">
-            {FRAMES.map((frame) => (
+            {frames.map((frame) => (
               <div
                 key={frame.name}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
               >
                 {/* Illustration */}
                 <div className="w-full h-20 bg-gray-50 rounded-xl flex items-center justify-center mb-4">
-                  {frame.svg}
+                  {framesvg(frame.name)}
                 </div>
 
                 {/* Name + score */}
@@ -157,11 +195,11 @@ export default function ResultsPage() {
                 </div>
 
                 {/* Description */}
-                <p className="text-xs text-gray-400 leading-relaxed mb-3">{frame.description}</p>
+                <p className="text-xs text-gray-400 leading-relaxed mb-3">{frameDesc(frame.name)}</p>
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1.5">
-                  {frame.tags.map((tag) => (
+                  {frameTags(frame.name).map((tag) => (
                     <span
                       key={tag}
                       className="text-[11px] font-medium border border-[#1E3A8A] text-[#1E3A8A] px-2.5 py-0.5 rounded-full"
@@ -183,7 +221,7 @@ export default function ResultsPage() {
           <div className="min-w-0">
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Top Match</p>
             <p className="text-sm font-bold text-[#1E3A8A] leading-tight truncate">
-              Modernist Rectangular · 92% · Maison Lartigue 0.4 km
+              {topMatch.name} · {topMatch.score}% · Maison Lartigue 0.4 km
             </p>
           </div>
           <button

@@ -27,18 +27,29 @@ export async function POST(request: Request) {
 
   const faceWidth = Math.abs(landmarks.contour_left1.x - landmarks.contour_right1.x)
   const faceHeight = Math.abs(landmarks.contour_chin.y - landmarks.contour_left1.y)
-  const ratio = faceWidth / faceHeight
+  const ratio = faceHeight / faceWidth
 
   let faceShape = 'oval'
-  if (ratio > 0.85) faceShape = 'round'
-  else if (ratio < 0.65) faceShape = 'oblong'
-  else if (ratio > 0.75) faceShape = 'square'
-  else faceShape = 'oval'
+  if (ratio >= 1.20) faceShape = 'oblong'
+  else if (ratio >= 1.05) faceShape = 'oval'
+  else if (ratio >= 0.95) faceShape = 'square'
+  else faceShape = 'round'
+
+  const leftEye = landmarks.left_eye_center
+  const rightEye = landmarks.right_eye_center
+  const ipd = Math.round(Math.abs(rightEye.x - leftEye.x))
+
+  const qualityValue = face.attributes?.facequality?.value
+  console.log('facequality raw value:', qualityValue)
+
+  console.log('Résultat final:', { faceShape, confidence: qualityValue ? Math.round(qualityValue) : 85, ratio, faceWidth, faceHeight, ipd })
 
   return NextResponse.json({
     faceShape,
-    confidence: Math.round(face.attributes?.facequality?.value || 85),
+    confidence: Math.round(face.attributes?.facequality?.value) || 85,
     age: face.attributes?.age?.value,
     gender: face.attributes?.gender?.value,
+    ipd,
+    ratio: Math.round(ratio * 100) / 100,
   })
 }
