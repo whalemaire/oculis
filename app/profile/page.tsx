@@ -1,12 +1,37 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/app/components/AuthProvider'
 
 export default function ProfilePage() {
   const router = useRouter()
+  const { session } = useAuth()
   const [notifications, setNotifications] = useState(true)
+  const [scans, setScans] = useState<any[]>([])
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    const fetchScans = async () => {
+      const { data, error } = await supabase
+        .from('scan')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('id', { ascending: false })
+
+      console.log('data:', data)
+      console.log('error:', error)
+
+      if (data) setScans(data)
+    }
+
+    fetchScans()
+  }, [session])
+
+  console.log('session user id:', session?.user?.id)
+  console.log('scans:', scans)
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -76,17 +101,42 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Empty state */}
-          <div className="flex flex-col items-center py-8 gap-3">
-            <span className="text-4xl opacity-30">📷</span>
-            <p className="text-sm text-gray-400">Aucun scan pour l'instant</p>
-            <button
-              onClick={() => router.push('/scan')}
-              className="mt-1 bg-[#1E3A8A] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#162d6b] transition-colors"
-            >
-              Démarrer mon premier scan
-            </button>
-          </div>
+          {scans.length === 0 ? (
+            <div className="flex flex-col items-center py-8 gap-3">
+              <span className="text-4xl opacity-30">📷</span>
+              <p className="text-sm text-gray-400">Aucun scan pour l'instant</p>
+              <button
+                onClick={() => router.push('/scan')}
+                className="mt-1 bg-[#1E3A8A] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#162d6b] transition-colors"
+              >
+                Démarrer mon premier scan
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {scans.map((scan) => (
+                <div key={scan.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-full capitalize">
+                      {scan.face_shape}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-[#0A2540]">{scan.confidence}% confiance</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(scan.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => router.push(`/results?shape=${scan.face_shape}&confidence=${scan.confidence}&ipd=${scan.ipd}&ratio=${scan.ratio}`)}
+                    className="text-sm text-[#1E3A8A] font-semibold hover:underline flex-shrink-0"
+                  >
+                    Voir →
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Section 3 — Compte */}
