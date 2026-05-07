@@ -252,29 +252,38 @@ export default function OpticiansPage() {
                   {showContextDropdown && (
                     <>
                       <div
-                        className="fixed inset-0 z-[100]"
+                        className="fixed inset-0"
+                        style={{ zIndex: 99998 }}
                         onClick={() => setShowContextDropdown(false)}
                       />
-                      <div className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-border rounded-xl shadow-panel z-[101] py-1 overflow-hidden">
+                      <div
+                        style={{
+                          position: 'fixed',
+                          top: '60px',
+                          right: '16px',
+                          width: '220px',
+                          backgroundColor: 'white',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 24px rgba(10,37,64,0.15)',
+                          border: '1px solid #E2E8F0',
+                          zIndex: 99999,
+                          overflow: 'hidden'
+                        }}
+                      >
                         {contexts.map((ctx) => (
                           <button
                             key={ctx.id}
                             onClick={() => switchContext(ctx.id)}
-                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-surface transition-colors text-left"
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', fontSize: '14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                           >
-                            <div className="flex items-center gap-2">
-                              <span>{USAGE_EMOJI[ctx.usage] ?? '🎯'}</span>
-                              <span className="text-primary font-medium">{ctx.name}</span>
-                            </div>
-                            {activeContext?.id === ctx.id && (
-                              <span className="text-secondary text-xs font-bold">✓</span>
-                            )}
+                            <span style={{ color: '#0A2540', fontWeight: '500' }}>{ctx.name}</span>
+                            {activeContext?.id === ctx.id && <span style={{ color: '#1E3A8A' }}>✓</span>}
                           </button>
                         ))}
-                        <div className="border-t border-border mt-1 pt-1">
+                        <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '4px', paddingTop: '4px' }}>
                           <button
                             onClick={() => { setShowContextDropdown(false); router.push('/contexts/new') }}
-                            className="w-full px-4 py-2.5 text-sm text-secondary font-medium hover:bg-surface transition-colors text-left"
+                            style={{ width: '100%', padding: '10px 16px', fontSize: '14px', color: '#1E3A8A', fontWeight: '500', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                           >
                             + Nouveau contexte
                           </button>
@@ -404,7 +413,7 @@ export default function OpticiansPage() {
         </div>
 
         {/* Right panel — map or detail */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative" style={{ position: 'relative', zIndex: 1 }}>
 
           {/* Leaflet map — always visible */}
           <div className="absolute inset-0">
