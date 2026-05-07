@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useAuth } from '@/app/components/AuthProvider'
 
 const recommendations: Record<string, { name: string; score: number }[]> = {
   oval: [
@@ -89,6 +90,7 @@ const CELEBRITIES = [
 export default function ResultsPage() {
   const router = useRouter()
   const params = useSearchParams()
+  const { session } = useAuth()
   const [showToast, setShowToast] = useState(false)
 
   const shape = params.get('shape') ?? 'oval'
@@ -98,6 +100,22 @@ export default function ResultsPage() {
   const shapeLabel = shape.charAt(0).toUpperCase() + shape.slice(1) + ' Face'
   const frames = recommendations[shape] ?? recommendations.oval
   const topMatch = frames[0]
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    fetch('/api/scans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: session.user.id,
+        face_shape: shape,
+        confidence: Number(confidence),
+        ipd: Number(ipd),
+        ratio: Number(ratio),
+      }),
+    })
+  }, [session])
 
   useEffect(() => {
     const show = setTimeout(() => setShowToast(true), 1000)
