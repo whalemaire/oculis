@@ -193,6 +193,19 @@ export default function OpticiansPage() {
 
   console.log('selectedId:', selectedId, 'selected:', selected)
 
+  const generateContextSummary = (ctx: any) => {
+    const correction = ctx.correction === 'Vue' ? 'lunettes de vue'
+      : ctx.correction === 'Soleil' ? 'lunettes de soleil'
+      : ctx.correction === 'Les deux' ? 'lunettes de vue et soleil'
+      : 'lunettes'
+
+    const style = ctx.style?.toLowerCase() || ''
+    const usage = ctx.usage?.toLowerCase() || ''
+    const budget = ctx.budget || ''
+
+    return `${correction} · style ${style} · usage ${usage} · ${budget}`
+  }
+
   const handleOpticianClick = (id: number) => {
     if (!session) {
       setShowAuthModal(true)
@@ -312,12 +325,12 @@ export default function OpticiansPage() {
         </div>
       </header>
 
-      {/* Scan filter banner */}
-      {framesParam && (
+      {/* Context banner */}
+      {activeContext && (
         <div className="flex items-center justify-between px-5 py-2 bg-secondary-lighter border-b border-secondary-light text-xs text-secondary">
-          <span>Résultats filtrés pour ton scan · <span className="font-semibold">{framesParam}</span></span>
+          <span>🎯 {activeContext.name} — {generateContextSummary(activeContext)}</span>
           <button
-            onClick={() => router.push('/opticians')}
+            onClick={() => setActiveContext(null)}
             className="ml-3 text-secondary/60 hover:text-secondary font-bold text-sm leading-none"
           >
             ×
