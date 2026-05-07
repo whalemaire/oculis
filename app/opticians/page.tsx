@@ -142,6 +142,7 @@ export default function OpticiansPage() {
   const [contexts, setContexts] = useState<any[]>([])
   const [activeContext, setActiveContext] = useState<any>(null)
   const [showContextDropdown, setShowContextDropdown] = useState(false)
+  const [showBanner, setShowBanner] = useState(true)
 
   console.log('contexts:', contexts)
   console.log('activeContext:', activeContext)
@@ -183,6 +184,7 @@ export default function OpticiansPage() {
     const newActive = contexts.find((c) => c.id === contextId)
     setActiveContext(newActive)
     setShowContextDropdown(false)
+    setShowBanner(true)
   }
 
   const framesParam = params.get('frames')
@@ -329,11 +331,11 @@ export default function OpticiansPage() {
       </header>
 
       {/* Context banner */}
-      {activeContext && (
+      {activeContext && showBanner && (
         <div className="flex items-center justify-between px-5 py-2 bg-secondary-lighter border-b border-secondary-light text-xs text-secondary">
           <span>🎯 {activeContext.name} — {generateContextSummary(activeContext)}</span>
           <button
-            onClick={() => setActiveContext(null)}
+            onClick={() => { setShowBanner(false); setActiveContext(null) }}
             className="ml-3 text-secondary/60 hover:text-secondary font-bold text-sm leading-none"
           >
             ×
@@ -440,10 +442,10 @@ export default function OpticiansPage() {
           {selected && (
             <div style={{
               position: 'fixed',
-              top: 0,
+              top: '61px',
               right: 0,
               width: '380px',
-              height: '100vh',
+              height: 'calc(100vh - 61px)',
               backgroundColor: 'white',
               zIndex: 9999,
               overflowY: 'auto',
