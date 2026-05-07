@@ -10,6 +10,7 @@ export default function ProfilePage() {
   const { session } = useAuth()
   const [scan, setScan] = useState<any>(null)
   const [contexts, setContexts] = useState<any[]>([])
+  const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null)
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -34,6 +35,12 @@ export default function ProfilePage() {
   async function signOut() {
     await supabase.auth.signOut()
     router.push('/opticians')
+  }
+
+  const deleteContext = async (id: string) => {
+    await supabase.from('context').delete().eq('id', id)
+    setContexts((prev) => prev.filter((c) => c.id !== id))
+    setShowDeleteModal(null)
   }
 
   const goToResults = (ctx: any) => {
@@ -135,25 +142,58 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-2">
               {contexts.map((ctx) => (
-                <div
-                  key={ctx.id}
-                  onClick={() => goToResults(ctx)}
-                  className="flex items-start justify-between p-4 rounded-xl border border-gray-100 hover:border-[#1E3A8A]/30 hover:bg-[#F8F9FF] cursor-pointer transition-all"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-[#0A2540] text-sm">{ctx.name}</p>
-                      {ctx.is_active && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                          Actif
-                        </span>
-                      )}
+                <div key={ctx.id}>
+                  <div
+                    onClick={() => goToResults(ctx)}
+                    className="relative flex items-start justify-between p-4 rounded-xl border border-gray-100 hover:border-[#1E3A8A]/30 hover:bg-[#F8F9FF] cursor-pointer transition-all"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-bold text-[#0A2540] text-sm">{ctx.name}</p>
+                        {ctx.is_active && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                            Actif
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 truncate">
+                        {[ctx.correction, ctx.style, ctx.usage, ctx.budget].filter(Boolean).join(' · ')}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-400 truncate">
-                      {[ctx.correction, ctx.style, ctx.usage, ctx.budget].filter(Boolean).join(' · ')}
-                    </p>
+                    <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowDeleteModal(ctx.id) }}
+                        className="text-gray-300 hover:text-gray-400 transition-colors text-base leading-none"
+                      >
+                        🗑️
+                      </button>
+                      <span className="text-[#1E3A8A] text-sm">→</span>
+                    </div>
                   </div>
-                  <span className="text-[#1E3A8A] text-sm ml-3 flex-shrink-0">→</span>
+
+                  {showDeleteModal === ctx.id && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ background: 'white', borderRadius: '16px', padding: '32px', maxWidth: '400px', width: '90%', textAlign: 'center' }}>
+                        <p style={{ fontSize: '20px', marginBottom: '8px' }}>🗑️</p>
+                        <h3 style={{ color: '#0A2540', fontWeight: '700', fontSize: '18px', marginBottom: '8px' }}>Supprimer ce contexte ?</h3>
+                        <p style={{ color: '#64748B', fontSize: '14px', marginBottom: '24px' }}>"{ctx.name}" sera définitivement supprimé.</p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                          <button
+                            onClick={() => setShowDeleteModal(null)}
+                            style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #E2E8F0', color: '#0A2540', fontWeight: '500', cursor: 'pointer', background: 'white' }}
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            onClick={() => deleteContext(ctx.id)}
+                            style={{ flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: '#EF4444', color: 'white', fontWeight: '500', cursor: 'pointer' }}
+                          >
+                            Oui, supprimer
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

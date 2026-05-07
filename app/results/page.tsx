@@ -3,29 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/app/components/AuthProvider'
-
-const recommendations: Record<string, { name: string; score: number }[]> = {
-  oval: [
-    { name: 'Modernist Rectangular', score: 92 },
-    { name: 'Pilot Aviator', score: 86 },
-    { name: 'Round Académie', score: 78 },
-  ],
-  round: [
-    { name: 'Rectangular Bold', score: 94 },
-    { name: 'Wayfarer Classic', score: 88 },
-    { name: 'Cat-eye Modern', score: 75 },
-  ],
-  square: [
-    { name: 'Round Soft', score: 93 },
-    { name: 'Oval Vintage', score: 85 },
-    { name: 'Aviator Slim', score: 79 },
-  ],
-  oblong: [
-    { name: 'Wayfarer Large', score: 91 },
-    { name: 'Round Classic', score: 84 },
-    { name: 'Cat-eye Bold', score: 77 },
-  ],
-}
+import { supabase } from '@/lib/supabase'
+import { getRecommendations } from '@/lib/recommendationEngine'
 
 const SVG_RECT = (
   <svg width="96" height="40" viewBox="0 0 96 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -59,25 +38,9 @@ const SVG_ROUND = (
 
 function framesvg(name: string) {
   const n = name.toLowerCase()
-  if (n.includes('aviator') || n.includes('pilot')) return SVG_AVIATOR
-  if (n.includes('round') || n.includes('oval') || n.includes('académie')) return SVG_ROUND
+  if (n.includes('aviateur')) return SVG_AVIATOR
+  if (n.includes('rond') || n.includes('ovale')) return SVG_ROUND
   return SVG_RECT
-}
-
-function frameTags(name: string): string[] {
-  const n = name.toLowerCase()
-  if (n.includes('aviator') || n.includes('pilot')) return ['Vintage', 'Iconique', 'Casual']
-  if (n.includes('round') || n.includes('oval')) return ['Artistique', 'Rétro', 'Doux']
-  if (n.includes('cat-eye')) return ['Mode', 'Audacieux', 'Féminin']
-  return ['Classique', 'Polyvalent', 'Business']
-}
-
-function frameDesc(name: string): string {
-  const n = name.toLowerCase()
-  if (n.includes('aviator') || n.includes('pilot')) return 'Style intemporel aux lentilles tombantes. Ajoute du caractère à votre visage.'
-  if (n.includes('round') || n.includes('oval')) return 'Forme douce et artistique qui contraste élégamment avec vos traits.'
-  if (n.includes('cat-eye')) return 'Monture rétro et audacieuse qui met en valeur le regard.'
-  return 'Structure nette et équilibrée qui souligne le regard avec élégance.'
 }
 
 const CELEBRITIES = [
@@ -92,14 +55,14 @@ export default function ResultsPage() {
   const params = useSearchParams()
   const { session } = useAuth()
   const [showToast, setShowToast] = useState(false)
+  const [recommendations, setRecommendations] = useState<any[]>([])
 
   const shape = params.get('shape') ?? 'oval'
   const confidence = params.get('confidence') ?? '85'
   const ipd = params.get('ipd') ?? '64'
   const ratio = params.get('ratio') ?? '1.10'
   const shapeLabel = shape.charAt(0).toUpperCase() + shape.slice(1) + ' Face'
-  const frames = recommendations[shape] ?? recommendations.oval
-  const topMatch = frames[0]
+  const topMatch = recommendations[0]
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -115,6 +78,53 @@ export default function ResultsPage() {
         ratio: Number(ratio),
       }),
     })
+  }, [session])
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    const loadRecommendations = async () => {
+      const { data: contextData } = await supabase
+        .from('context')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('is_active', true)
+        .single()
+
+      const { data: scanArray } = await supabase
+        .from('scan')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .limit(1)
+
+      const scanData = scanArray?.[0] || null
+      console.log('scanData corrigé:', scanData)
+
+      console.log('session:', session?.user?.id)
+      console.log('contextData:', contextData)
+      console.log('scanData:', scanData)
+
+      if (scanData && contextData) {
+        const recs = getRecommendations(scanData, contextData)
+        console.log('recommendations:', recs)
+        setRecommendations(recs)
+      } else if (scanData) {
+        const recs = getRecommendations(scanData, {
+          style: 'Classique',
+          usage: 'Quotidien',
+          correction: 'Vue',
+          budget: '100-300€',
+          material: 'Peu importe',
+          colors: 'Neutres',
+          personality: 'Discret',
+          frame_weight: 'Peu importe',
+        })
+        console.log('recommendations:', recs)
+        setRecommendations(recs)
+      }
+    }
+
+    loadRecommendations()
   }, [session])
 
   useEffect(() => {
@@ -188,36 +198,36 @@ export default function ResultsPage() {
             Montures recommandées
           </p>
           <div className="space-y-3">
-            {frames.map((frame) => (
+            {recommendations.map((rec) => (
               <div
-                key={frame.name}
+                key={rec.name}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
               >
                 {/* Illustration */}
                 <div className="w-full h-20 bg-gray-50 rounded-xl flex items-center justify-center mb-4">
-                  {framesvg(frame.name)}
+                  {framesvg(rec.name)}
                 </div>
 
                 {/* Name + score */}
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-bold text-[#0A2540]">{frame.name}</p>
-                  <span className="text-sm font-bold text-[#1E3A8A]">{frame.score}%</span>
+                  <p className="font-bold text-[#0A2540]">{rec.name}</p>
+                  <span className="text-sm font-bold text-[#1E3A8A]">{rec.score}%</span>
                 </div>
 
                 {/* Progress bar */}
                 <div className="w-full h-1.5 bg-gray-100 rounded-full mb-3">
                   <div
                     className="h-1.5 bg-[#1E3A8A] rounded-full transition-all"
-                    style={{ width: `${frame.score}%` }}
+                    style={{ width: `${rec.score}%` }}
                   />
                 </div>
 
                 {/* Description */}
-                <p className="text-xs text-gray-400 leading-relaxed mb-3">{frameDesc(frame.name)}</p>
+                <p className="text-xs text-gray-400 leading-relaxed mb-3">{rec.explanation}</p>
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1.5">
-                  {frameTags(frame.name).map((tag) => (
+                  {rec.tags.map((tag: string) => (
                     <span
                       key={tag}
                       className="text-[11px] font-medium border border-[#1E3A8A] text-[#1E3A8A] px-2.5 py-0.5 rounded-full"
@@ -239,11 +249,11 @@ export default function ResultsPage() {
           <div className="min-w-0">
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Top Match</p>
             <p className="text-sm font-bold text-[#1E3A8A] leading-tight truncate">
-              {topMatch.name} · {topMatch.score}% · Maison Lartigue 0.4 km
+              {topMatch ? `${topMatch.name} · ${topMatch.score}%` : '…'}
             </p>
           </div>
           <button
-            onClick={() => router.push(`/opticians?frames=${recommendations[shape as keyof typeof recommendations]?.map((r: any) => r.name).join(',')}`)}
+            onClick={() => router.push(`/opticians?frames=${recommendations.map((r) => r.name).join(',')}`)}
             className="flex-shrink-0 bg-[#1E3A8A] text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors whitespace-nowrap"
           >
             Find the frames →
