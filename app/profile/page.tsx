@@ -10,6 +10,7 @@ export default function ProfilePage() {
   const { session } = useAuth()
   const [notifications, setNotifications] = useState(true)
   const [scans, setScans] = useState<any[]>([])
+  const [contexts, setContexts] = useState<any[]>([])
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -27,8 +28,29 @@ export default function ProfilePage() {
       if (data) setScans(data)
     }
 
+    const fetchContexts = async () => {
+      const { data } = await supabase
+        .from('context')
+        .select('id')
+        .eq('user_id', session.user.id)
+      if (data) setContexts(data)
+    }
+
     fetchScans()
+    fetchContexts()
   }, [session])
+
+  const hasScans = scans.length > 0
+  const hasContexts = contexts.length > 0
+  const completionPercent = hasScans && hasContexts ? 100 : hasScans ? 60 : 20
+  const completionBarColor = hasScans && hasContexts ? 'bg-success' : hasScans ? 'bg-accent' : 'bg-red-400'
+  const completionTextColor = hasScans && hasContexts ? 'text-success' : hasScans ? 'text-accent' : 'text-red-400'
+  const completionMessage = hasScans && hasContexts
+    ? null
+    : hasScans
+      ? 'Crée un contexte pour affiner tes recommandations →'
+      : 'Fais ton premier scan →'
+  const completionLink = hasScans ? '/contexts/new' : '/scan'
 
   console.log('session user id:', session?.user?.id)
   console.log('scans:', scans)
@@ -86,6 +108,28 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+            {/* Completion bar */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-gray-400 font-medium">Profil complété</span>
+                <span className={`text-xs font-semibold ${completionTextColor}`}>{completionPercent}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${completionBarColor}`}
+                  style={{ width: `${completionPercent}%` }}
+                />
+              </div>
+              {completionMessage && (
+                <button
+                  onClick={() => router.push(completionLink)}
+                  className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition-colors text-left"
+                >
+                  {completionMessage}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -93,12 +137,20 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
             <p className="font-bold text-[#0A2540]">Mes scans</p>
-            <button
-              onClick={() => router.push('/scan')}
-              className="text-sm text-[#1E3A8A] font-medium hover:underline"
-            >
-              Nouveau scan →
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push('/contexts/new')}
+                className="text-sm text-[#1E3A8A] font-medium hover:underline"
+              >
+                + Nouveau contexte
+              </button>
+              <button
+                onClick={() => router.push('/scan')}
+                className="text-sm text-[#1E3A8A] font-medium hover:underline"
+              >
+                Nouveau scan →
+              </button>
+            </div>
           </div>
 
           {scans.length === 0 ? (

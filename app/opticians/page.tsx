@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/app/components/AuthProvider'
+import { supabase } from '@/lib/supabase'
 
 const OPTICIANS = [
   {
@@ -132,6 +133,51 @@ export default function OpticiansPage() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [contexts, setContexts] = useState<any[]>([])
+  const [activeContext, setActiveContext] = useState<any>(null)
+  const [showContextDropdown, setShowContextDropdown] = useState(false)
+
+  console.log('contexts:', contexts)
+  console.log('activeContext:', activeContext)
+  console.log('session:', session?.user?.id)
+
+  const USAGE_EMOJI: Record<string, string> = {
+    'Quotidien': '👓',
+    'Écrans': '💻',
+    'Sport': '🏃',
+    'Fashion': '☀️',
+  }
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    supabase
+      .from('context')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .then(({ data }) => {
+        if (data) {
+          setContexts(data)
+          const active = data.find((c) => c.is_active) ?? data[0] ?? null
+          setActiveContext(active)
+        }
+      })
+  }, [session])
+
+  const switchContext = async (contextId: string) => {
+    await supabase
+      .from('context')
+      .update({ is_active: false })
+      .eq('user_id', session!.user.id)
+
+    await supabase
+      .from('context')
+      .update({ is_active: true })
+      .eq('id', contextId)
+
+    const newActive = contexts.find((c) => c.id === contextId)
+    setActiveContext(newActive)
+    setShowContextDropdown(false)
+  }
 
   const framesParam = params.get('frames')
   const scanFrames = framesParam ? framesParam.split(',') : []
@@ -185,12 +231,59 @@ export default function OpticiansPage() {
           )}
           {userType === 'user' && (
             <>
-              <button
-                onClick={() => router.push('/scan')}
-                className="bg-secondary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-alt transition-colors"
-              >
-                📷 Scan
-              </button>
+              {contexts.length === 0 ? (
+                <button
+                  onClick={() => router.push('/contexts/new')}
+                  className="border border-secondary text-secondary px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-lighter transition-colors"
+                >
+                  Créer mon profil →
+                </button>
+              ) : (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowContextDropdown(!showContextDropdown)}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-secondary-lighter border border-secondary-light text-secondary rounded-xl text-sm font-semibold hover:bg-secondary-light transition-colors"
+                  >
+                    <span>{USAGE_EMOJI[activeContext?.usage] ?? '🎯'}</span>
+                    <span>{activeContext?.name ?? 'Contexte'}</span>
+                    <span className="text-xs opacity-70">▾</span>
+                  </button>
+
+                  {showContextDropdown && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-[100]"
+                        onClick={() => setShowContextDropdown(false)}
+                      />
+                      <div className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-border rounded-xl shadow-panel z-[101] py-1 overflow-hidden">
+                        {contexts.map((ctx) => (
+                          <button
+                            key={ctx.id}
+                            onClick={() => switchContext(ctx.id)}
+                            className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-surface transition-colors text-left"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>{USAGE_EMOJI[ctx.usage] ?? '🎯'}</span>
+                              <span className="text-primary font-medium">{ctx.name}</span>
+                            </div>
+                            {activeContext?.id === ctx.id && (
+                              <span className="text-secondary text-xs font-bold">✓</span>
+                            )}
+                          </button>
+                        ))}
+                        <div className="border-t border-border mt-1 pt-1">
+                          <button
+                            onClick={() => { setShowContextDropdown(false); router.push('/contexts/new') }}
+                            className="w-full px-4 py-2.5 text-sm text-secondary font-medium hover:bg-surface transition-colors text-left"
+                          >
+                            + Nouveau contexte
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
               <button
                 onClick={() => router.push('/profile')}
                 className="border border-border text-primary px-4 py-2 rounded-xl text-sm font-medium hover:bg-surface transition-colors"
