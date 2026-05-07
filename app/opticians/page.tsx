@@ -73,9 +73,14 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
-function LeafletMapInner({ opticians }: { opticians: Optician[] }) {
+function LeafletMapInner({ opticians, onMarkerClick }: { opticians: Optician[], onMarkerClick?: (id: number) => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
+  const onMarkerClickRef = useRef(onMarkerClick)
+
+  useEffect(() => {
+    onMarkerClickRef.current = onMarkerClick
+  }, [onMarkerClick])
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
@@ -107,6 +112,7 @@ function LeafletMapInner({ opticians }: { opticians: Optician[] }) {
       L.marker([opt.lat, opt.lng])
         .addTo(map)
         .bindPopup(`<b>${opt.name}</b><br/>${opt.address}`)
+        .on('click', () => onMarkerClickRef.current?.(opt.id))
     })
 
     mapRef.current = map
@@ -207,11 +213,8 @@ export default function OpticiansPage() {
   }
 
   const handleOpticianClick = (id: number) => {
-    if (!session) {
-      setShowAuthModal(true)
-      return
-    }
-    setSelectedId(id)
+    if (!session) { setShowAuthModal(true); return }
+    setSelectedId(prev => prev === id ? null : id)
   }
 
   return (
@@ -430,7 +433,7 @@ export default function OpticiansPage() {
 
           {/* Leaflet map — always visible */}
           <div className="absolute inset-0">
-            <LeafletMap opticians={OPTICIANS} />
+            <LeafletMap opticians={OPTICIANS} onMarkerClick={handleOpticianClick} />
           </div>
 
           {/* Detail drawer — overlays map */}
@@ -447,14 +450,6 @@ export default function OpticiansPage() {
               boxShadow: '-4px 0 24px rgba(10,37,64,0.12)',
               padding: '24px'
             }}>
-              <button
-                onClick={() => setSelectedId(null)}
-                className="text-sm"
-                style={{ marginBottom: '16px', color: '#64748B' }}
-              >
-                ← Retour à la carte
-              </button>
-
               <h2 className="text-2xl font-bold" style={{ color: '#0A2540', marginBottom: '4px' }}>
                 {selected.name}
               </h2>
