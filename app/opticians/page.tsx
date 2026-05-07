@@ -64,7 +64,7 @@ function Stars({ rating }: { rating: number }) {
   return (
     <span className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <svg key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-amber-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+        <svg key={i} className={`w-3.5 h-3.5 ${i <= Math.round(rating) ? 'text-accent' : 'text-border'}`} fill="currentColor" viewBox="0 0 20 20">
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
       ))}
@@ -144,28 +144,28 @@ export default function OpticiansPage() {
   const selected = filteredOpticians.find((o) => o.id === selectedId) ?? null
 
   return (
-    <main className="min-h-screen bg-white flex flex-col">
+    <main className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-white z-10 relative">
-        <span className="text-xl font-bold text-[#0A2540]">Oculis</span>
+      <header className="flex items-center justify-between px-6 py-3.5 border-b border-border bg-white z-10 relative">
+        <span className="text-xl font-bold text-primary">Oculis</span>
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push('/scan')}
-            className="bg-[#1E3A8A] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#162d6b] transition-colors"
+            className="bg-secondary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-alt transition-colors"
           >
             📷 Scan
           </button>
           {session ? (
             <button
               onClick={() => router.push('/profile')}
-              className="border border-gray-200 text-[#0A2540] px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="border border-border text-primary px-4 py-2 rounded-xl text-sm font-medium hover:bg-surface transition-colors"
             >
               Mon profil
             </button>
           ) : (
             <button
               onClick={() => router.push('/opticians-signup')}
-              className="border border-[#1E3A8A] text-[#1E3A8A] px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-50 transition-colors"
+              className="border border-secondary text-secondary px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary-lighter transition-colors"
             >
               Vous êtes opticien ?
             </button>
@@ -175,11 +175,11 @@ export default function OpticiansPage() {
 
       {/* Scan filter banner */}
       {framesParam && (
-        <div className="flex items-center justify-between px-5 py-2 bg-blue-50 border-b border-blue-100 text-xs text-blue-700">
+        <div className="flex items-center justify-between px-5 py-2 bg-secondary-lighter border-b border-secondary-light text-xs text-secondary">
           <span>Résultats filtrés pour ton scan · <span className="font-semibold">{framesParam}</span></span>
           <button
             onClick={() => router.push('/opticians')}
-            className="ml-3 text-blue-400 hover:text-blue-600 font-bold text-sm leading-none"
+            className="ml-3 text-secondary/60 hover:text-secondary font-bold text-sm leading-none"
           >
             ×
           </button>
@@ -190,14 +190,14 @@ export default function OpticiansPage() {
       <div className="flex flex-1 min-h-0">
 
         {/* Left panel */}
-        <div className="w-2/5 flex flex-col border-r border-gray-100 overflow-y-auto">
+        <div className="w-2/5 flex flex-col border-r border-border overflow-y-auto">
           <div className="px-5 pt-5 pb-4 space-y-4">
 
             {/* Search */}
             <input
               type="text"
               placeholder="Search by district, name, or postal code..."
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#1E3A8A] transition-colors"
+              className="w-full border border-border rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:border-secondary transition-colors"
             />
 
             {/* Frame filters */}
@@ -208,8 +208,8 @@ export default function OpticiansPage() {
                   onClick={() => setActiveFilter(f)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     activeFilter === f
-                      ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                      ? 'bg-secondary text-white border-secondary'
+                      : 'bg-white text-muted border-border hover:border-muted'
                   }`}
                 >
                   {f}
@@ -218,7 +218,7 @@ export default function OpticiansPage() {
             </div>
 
             {/* Count */}
-            <p className="text-xs text-gray-500 font-medium">8 opticians · within 30 km</p>
+            <p className="text-xs text-muted font-medium">8 opticians · within 30 km</p>
           </div>
 
           {/* Optician cards */}
@@ -227,25 +227,25 @@ export default function OpticiansPage() {
               <div
                 key={opt.id}
                 onClick={() => setSelectedId(opt.id === selectedId ? null : opt.id)}
-                className={`rounded-2xl border p-4 cursor-pointer transition-all ${
+                className={`rounded-card border p-4 cursor-pointer transition-all ${
                   selectedId === opt.id
-                    ? 'border-[#1E3A8A] bg-blue-50/40 shadow-sm'
-                    : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                    ? 'border-secondary bg-secondary-lighter/40 shadow-card'
+                    : 'border-border bg-white hover:border-muted hover:shadow-card'
                 }`}
               >
                 {/* Name + badges */}
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <p className="font-bold text-[#0A2540] text-sm leading-tight">{opt.name}</p>
+                  <p className="font-bold text-primary text-sm leading-tight">{opt.name}</p>
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-pill ${
                       opt.match === 'perfect'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-amber-100 text-amber-700'
+                        ? 'bg-secondary-light text-secondary'
+                        : 'bg-accent-light text-accent-dark'
                     }`}>
                       {opt.match === 'perfect' ? 'Perfect match' : 'Partial match'}
                     </span>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                      opt.inStock ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-pill ${
+                      opt.inStock ? 'bg-success-light text-success-dark' : 'bg-surface text-muted'
                     }`}>
                       {opt.inStock ? '✓ In stock' : 'Call to check'}
                     </span>
@@ -253,15 +253,15 @@ export default function OpticiansPage() {
                 </div>
 
                 {/* Address */}
-                <p className="text-xs text-gray-400 mb-2">{opt.address}</p>
+                <p className="text-xs text-muted mb-2">{opt.address}</p>
 
                 {/* Rating + open status */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Stars rating={opt.rating} />
-                    <span className="text-xs text-gray-500">{opt.rating} ({opt.reviews})</span>
+                    <span className="text-xs text-muted">{opt.rating} ({opt.reviews})</span>
                   </div>
-                  <span className={`text-[10px] font-medium ${opt.open ? 'text-green-600' : 'text-red-400'}`}>
+                  <span className={`text-[10px] font-medium ${opt.open ? 'text-success' : 'text-accent'}`}>
                     {opt.open ? `Open · until ${opt.openUntil}` : `Closed · opens 9:00`}
                   </span>
                 </div>
@@ -269,7 +269,7 @@ export default function OpticiansPage() {
                 {/* View store button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); setSelectedId(opt.id) }}
-                  className="mt-3 w-full text-center text-xs font-semibold text-[#1E3A8A] hover:underline"
+                  className="mt-3 w-full text-center text-xs font-semibold text-secondary hover:underline"
                 >
                   View store →
                 </button>
@@ -293,7 +293,7 @@ export default function OpticiansPage() {
             <div className="h-full overflow-y-auto p-8">
               <button
                 onClick={() => setSelectedId(null)}
-                className="text-sm text-gray-400 hover:text-gray-600 mb-6 flex items-center gap-1"
+                className="text-sm text-muted hover:text-subtle mb-6 flex items-center gap-1"
               >
                 ← Retour à la carte
               </button>
@@ -301,21 +301,21 @@ export default function OpticiansPage() {
               <div className="max-w-md space-y-6">
                 {/* Name + badges */}
                 <div>
-                  <h2 className="text-2xl font-bold text-[#0A2540] mb-2">{selected.name}</h2>
-                  <p className="text-gray-400 text-sm mb-3">{selected.address} · {selected.distance}</p>
+                  <h2 className="text-2xl font-bold text-primary mb-2">{selected.name}</h2>
+                  <p className="text-muted text-sm mb-3">{selected.address} · {selected.distance}</p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                      selected.match === 'perfect' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-pill ${
+                      selected.match === 'perfect' ? 'bg-secondary-light text-secondary' : 'bg-accent-light text-accent-dark'
                     }`}>
                       {selected.match === 'perfect' ? '✓ Perfect match' : '~ Partial match'}
                     </span>
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                      selected.inStock ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-pill ${
+                      selected.inStock ? 'bg-success-light text-success-dark' : 'bg-surface text-muted'
                     }`}>
                       {selected.inStock ? '✓ In stock' : 'Call to check stock'}
                     </span>
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                      selected.open ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-400'
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-pill ${
+                      selected.open ? 'bg-success-light text-success-dark' : 'bg-accent-light text-accent-dark'
                     }`}>
                       {selected.open ? `Open until ${selected.openUntil}` : 'Closed'}
                     </span>
@@ -325,32 +325,32 @@ export default function OpticiansPage() {
                 {/* Rating */}
                 <div className="flex items-center gap-2">
                   <Stars rating={selected.rating} />
-                  <span className="text-sm font-semibold text-[#0A2540]">{selected.rating}</span>
-                  <span className="text-sm text-gray-400">({selected.reviews} reviews)</span>
+                  <span className="text-sm font-semibold text-primary">{selected.rating}</span>
+                  <span className="text-sm text-muted">({selected.reviews} reviews)</span>
                 </div>
 
                 {/* Frame styles */}
                 <div>
-                  <p className="text-sm font-semibold text-[#0A2540] mb-3">Available frame styles</p>
+                  <p className="text-sm font-semibold text-primary mb-3">Available frame styles</p>
                   <div className="flex gap-3">
                     {selected.frames.map((frame) => (
-                      <div key={frame} className="flex flex-col items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-4 py-3">
-                        <div className="w-10 h-5 bg-gray-200 rounded" />
-                        <span className="text-xs text-gray-500">{frame}</span>
+                      <div key={frame} className="flex flex-col items-center gap-1.5 bg-white border border-border rounded-xl px-4 py-3">
+                        <div className="w-10 h-5 bg-surface rounded" />
+                        <span className="text-xs text-muted">{frame}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Phone */}
-                <p className="text-sm text-gray-500">{selected.phone}</p>
+                <p className="text-sm text-muted">{selected.phone}</p>
 
                 {/* CTAs */}
                 <div className="flex flex-col gap-3">
-                  <button className="w-full bg-[#1E3A8A] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors">
+                  <button className="w-full bg-secondary text-white py-3 rounded-xl font-semibold text-sm hover:bg-secondary-alt transition-colors">
                     Reserve a fitting
                   </button>
-                  <button className="w-full border border-gray-200 text-[#0A2540] py-3 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors">
+                  <button className="w-full border border-border text-primary py-3 rounded-xl font-semibold text-sm hover:bg-surface transition-colors">
                     Get directions →
                   </button>
                 </div>
