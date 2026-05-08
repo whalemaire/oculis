@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/app/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
+import { getRecommendations } from '@/lib/recommendationEngine'
 
 const OPTICIANS = [
   {
@@ -57,7 +58,7 @@ const OPTICIANS = [
   },
 ]
 
-const FILTERS = ['All', 'Rectangular', 'Aviator', 'Round', 'Cat-eye']
+const FRAME_FILTERS = ['All', 'Rectangular', 'Aviator', 'Round', 'Cat-eye', 'Wayfarer', 'Browline', 'Geometric', 'Rimless', 'Oversized', 'Clubmaster']
 
 type Optician = (typeof OPTICIANS)[number]
 
@@ -136,7 +137,7 @@ export default function OpticiansPage() {
   const router = useRouter()
   const params = useSearchParams()
   const { session } = useAuth()
-  const [activeFilter, setActiveFilter] = useState('All')
+  const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [contexts, setContexts] = useState<any[]>([])
@@ -185,6 +186,42 @@ export default function OpticiansPage() {
     setActiveContext(newActive)
     setShowContextDropdown(false)
     setShowBanner(true)
+
+    const { data: scanArray } = await supabase
+      .from('scan')
+      .select('*')
+      .eq('user_id', session!.user.id)
+      .limit(1)
+
+    const scanData = scanArray?.[0]
+
+    if (scanData && newActive) {
+      const frameTranslation: Record<string, string> = {
+        'Rectangulaire': 'Rectangular',
+        'Rectangulaire fin': 'Rectangular',
+        'Aviateur': 'Aviator',
+        'Rond': 'Round',
+        'Rond fin': 'Round',
+        'Cat-eye': 'Cat-eye',
+        'Wayfarer': 'Wayfarer',
+        'Géométrique': 'Geometric',
+        'Rimless': 'Rimless',
+        'Oversized': 'Oversized',
+        'Browline': 'Browline',
+        'Clubmaster': 'Clubmaster',
+        'Ovale fin': 'Round',
+        'Wrap': 'Aviator',
+      }
+
+      const recs = getRecommendations(scanData, newActive)
+      console.log('recs from engine:', recs)
+      console.log('noms avant traduction:', recs.map(r => r.name))
+      const frameNames = recs
+        .map(r => frameTranslation[r.name] || r.name)
+        .filter((v, i, a) => a.indexOf(v) === i)
+      console.log('frameNames after translation:', frameNames)
+      setActiveFilters(frameNames)
+    }
   }
 
   const framesParam = params.get('frames')
@@ -192,9 +229,9 @@ export default function OpticiansPage() {
 
   const filteredOpticians = scanFrames.length > 0
     ? OPTICIANS.filter((opt) => opt.frames.some((f) => scanFrames.some((sf) => sf.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(sf.toLowerCase()))))
-    : activeFilter === 'All'
+    : activeFilters.length === 0
       ? OPTICIANS
-      : OPTICIANS.filter((opt) => opt.frames.includes(activeFilter))
+      : OPTICIANS.filter((opt) => opt.frames.some((f) => activeFilters.includes(f)))
 
   const selected = OPTICIANS.find((o) => o.id === selectedId) ?? null
   const userType = (session ? 'user' : null) as 'user' | 'optician' | null
@@ -335,7 +372,7 @@ export default function OpticiansPage() {
         <div className="flex items-center justify-between px-5 py-2 bg-secondary-lighter border-b border-secondary-light text-xs text-secondary">
           <span>🎯 {activeContext.name} — {generateContextSummary(activeContext)}</span>
           <button
-            onClick={() => { setShowBanner(false); setActiveContext(null) }}
+            onClick={() => { setShowBanner(false); setActiveContext(null); setActiveFilters([]) }}
             className="ml-3 text-secondary/60 hover:text-secondary font-bold text-sm leading-none"
           >
             ×
@@ -359,14 +396,23 @@ export default function OpticiansPage() {
 
             {/* Frame filters */}
             <div className="flex flex-wrap gap-2">
-              {FILTERS.map((f) => (
+              {FRAME_FILTERS.map((f) => (
                 <button
                   key={f}
-                  onClick={() => setActiveFilter(f)}
+                  onClick={() => {
+                    if (f === 'All') { setActiveFilters([]); return }
+                    setActiveFilters(prev =>
+                      prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]
+                    )
+                  }}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    activeFilter === f
-                      ? 'bg-secondary text-white border-secondary'
-                      : 'bg-white text-muted border-border hover:border-muted'
+                    f === 'All'
+                      ? activeFilters.length === 0
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-muted border-border hover:border-muted'
+                      : activeFilters.includes(f)
+                        ? 'bg-secondary text-white border-secondary'
+                        : 'bg-white text-muted border-border hover:border-muted'
                   }`}
                 >
                   {f}

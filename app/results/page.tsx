@@ -56,14 +56,13 @@ export default function ResultsPage() {
   const { session } = useAuth()
   const [showToast, setShowToast] = useState(false)
   const [recommendations, setRecommendations] = useState<any[]>([])
+  const [activeContext, setActiveContext] = useState<any>(null)
 
   const shape = params.get('shape') ?? 'oval'
   const confidence = params.get('confidence') ?? '85'
   const ipd = params.get('ipd') ?? '64'
   const ratio = params.get('ratio') ?? '1.10'
   const shapeLabel = shape.charAt(0).toUpperCase() + shape.slice(1) + ' Face'
-  const topMatch = recommendations[0]
-
   useEffect(() => {
     if (!session?.user?.id) return
 
@@ -80,6 +79,18 @@ export default function ResultsPage() {
     })
   }, [session])
 
+  // UseEffect 1 — sans session, utilise les params URL
+  useEffect(() => {
+    if (session) return
+    const urlShape = params.get('shape') || 'oval'
+    const recs = getRecommendations(
+      { face_shape: urlShape, confidence: 85, ratio: 0.8, ipd: 64 },
+      { style: 'Classique', usage: 'Quotidien', correction: 'Vue', budget: '100-300€', material: 'Peu importe', colors: 'Neutres', personality: 'Discret', frame_weight: 'Peu importe' }
+    )
+    setRecommendations(recs)
+  }, [])
+
+  // UseEffect 2 — avec session, utilise Supabase
   useEffect(() => {
     if (!session?.user?.id) return
 
@@ -103,6 +114,8 @@ export default function ResultsPage() {
       console.log('session:', session?.user?.id)
       console.log('contextData:', contextData)
       console.log('scanData:', scanData)
+
+      if (contextData) setActiveContext(contextData)
 
       if (scanData && contextData) {
         const recs = getRecommendations(scanData, contextData)
@@ -147,6 +160,17 @@ export default function ResultsPage() {
       </header>
 
       <div className="max-w-xl mx-auto w-full px-5 py-6 space-y-6">
+
+        {/* Completion banner — non connecté */}
+        {!session && (
+          <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '12px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ color: '#92400E', fontWeight: '600', fontSize: '14px' }}>Profil complété à 10%</p>
+              <p style={{ color: '#B45309', fontSize: '12px' }}>Crée un compte pour affiner tes résultats</p>
+            </div>
+            <div style={{ background: '#F59E0B', borderRadius: '100px', padding: '4px 8px', fontSize: '12px', color: 'white', fontWeight: '600' }}>10%</div>
+          </div>
+        )}
 
         {/* Section 1 — Forme du visage */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center text-center gap-3">
@@ -245,19 +269,45 @@ export default function ResultsPage() {
 
       {/* Sticky bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5 py-3.5">
-        <div className="max-w-xl mx-auto flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-0.5">Top Match</p>
-            <p className="text-sm font-bold text-[#1E3A8A] leading-tight truncate">
-              {topMatch ? `${topMatch.name} · ${topMatch.score}%` : '…'}
-            </p>
-          </div>
-          <button
-            onClick={() => router.push(`/opticians?frames=${recommendations.map((r) => r.name).join(',')}`)}
-            className="flex-shrink-0 bg-[#1E3A8A] text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors whitespace-nowrap"
-          >
-            Find the frames →
-          </button>
+        <div className="max-w-xl mx-auto flex flex-col gap-2">
+          {!session ? (
+            <>
+              <button
+                onClick={() => router.push('/login?redirect=/contexts/new')}
+                className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
+              >
+                Créer un contexte pour affiner →
+              </button>
+              <button
+                onClick={() => router.push('/opticians')}
+                className="w-full border border-gray-200 text-gray-500 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
+              >
+                Voir les opticiens quand même →
+              </button>
+            </>
+          ) : !activeContext ? (
+            <>
+              <button
+                onClick={() => router.push('/contexts/new')}
+                className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
+              >
+                Créer un contexte pour affiner →
+              </button>
+              <button
+                onClick={() => router.push('/opticians')}
+                className="w-full border border-gray-200 text-gray-500 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
+              >
+                Voir les opticiens →
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => router.push(`/opticians?frames=${recommendations.map((r) => r.name).join(',')}`)}
+              className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
+            >
+              Trouver ces montures près de moi →
+            </button>
+          )}
         </div>
       </div>
 

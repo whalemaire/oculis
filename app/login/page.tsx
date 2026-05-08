@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
@@ -11,6 +11,8 @@ type PhoneStep = 'input' | 'verify'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get('redirect') || '/opticians'
   const [activeTab, setActiveTab] = useState<Tab>('phone')
 
   // Email state
@@ -69,7 +71,7 @@ export default function LoginPage() {
     if (error) {
       setPhoneError(error.message)
     } else {
-      router.push('/opticians')
+      router.push(redirect)
     }
   }
 
@@ -245,7 +247,7 @@ export default function LoginPage() {
 
         {/* Skip */}
         <button
-          onClick={() => router.push('/results')}
+          onClick={() => router.push('/opticians')}
           className="text-sm text-gray-400 hover:text-gray-500 transition-colors text-center"
         >
           Peut-être plus tard →
