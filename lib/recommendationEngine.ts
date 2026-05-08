@@ -7,6 +7,7 @@ export type Context = {
   colors: string
   personality: string
   frame_weight: string
+  existing_glasses?: string
 }
 
 export type FaceScan = {
@@ -208,6 +209,178 @@ export function getRecommendations(
       scores['Browline'] = (scores['Browline'] || 0) + 6
       scores['Wayfarer'] = (scores['Wayfarer'] || 0) - 4
     }
+  }
+
+  // NIVEAU 2 — Scoring contextuel par combinaisons
+
+  // Combinaison Style + Correction
+  const styleCorrection = `${context.style}|${context.correction}`
+  const styleCorrectionBonus: Record<string, { frames: string[], bonus: number }[]> = {
+    'Classique|Vue': [
+      { frames: ['Rectangulaire', 'Browline', 'Wayfarer'], bonus: 15 },
+      { frames: ['Cat-eye', 'Oversized'], bonus: -10 },
+    ],
+    'Classique|Soleil': [
+      { frames: ['Aviateur', 'Wayfarer', 'Browline'], bonus: 15 },
+      { frames: ['Rimless', 'Géométrique'], bonus: -10 },
+    ],
+    'Classique|Les deux': [
+      { frames: ['Wayfarer', 'Aviateur', 'Rectangulaire'], bonus: 12 },
+    ],
+    'Moderne|Vue': [
+      { frames: ['Géométrique', 'Rimless', 'Rectangulaire fin'], bonus: 15 },
+      { frames: ['Wayfarer', 'Browline'], bonus: -8 },
+    ],
+    'Moderne|Soleil': [
+      { frames: ['Géométrique', 'Cat-eye', 'Oversized'], bonus: 15 },
+      { frames: ['Wayfarer', 'Browline'], bonus: -8 },
+    ],
+    'Moderne|Les deux': [
+      { frames: ['Géométrique', 'Rimless', 'Cat-eye'], bonus: 12 },
+    ],
+    'Streetwear|Vue': [
+      { frames: ['Wayfarer', 'Clubmaster', 'Oversized'], bonus: 15 },
+      { frames: ['Rimless', 'Rectangulaire fin'], bonus: -10 },
+    ],
+    'Streetwear|Soleil': [
+      { frames: ['Oversized', 'Cat-eye', 'Wayfarer'], bonus: 18 },
+      { frames: ['Rimless', 'Browline'], bonus: -10 },
+    ],
+    'Streetwear|Les deux': [
+      { frames: ['Wayfarer', 'Oversized', 'Clubmaster'], bonus: 15 },
+    ],
+    'Minimaliste|Vue': [
+      { frames: ['Rimless', 'Rectangulaire fin', 'Rond fin'], bonus: 18 },
+      { frames: ['Oversized', 'Clubmaster'], bonus: -12 },
+    ],
+    'Minimaliste|Soleil': [
+      { frames: ['Rimless', 'Aviateur', 'Géométrique'], bonus: 15 },
+      { frames: ['Oversized', 'Wayfarer'], bonus: -10 },
+    ],
+    'Minimaliste|Les deux': [
+      { frames: ['Rimless', 'Aviateur', 'Rectangulaire fin'], bonus: 15 },
+    ],
+  }
+
+  const scBonus = styleCorrectionBonus[styleCorrection] || []
+  scBonus.forEach(({ frames, bonus }) => {
+    frames.forEach(frame => {
+      if (scores[frame] !== undefined) scores[frame] += bonus
+    })
+  })
+
+  // Combinaison Usage + Matière
+  const usageMaterial = `${context.usage}|${context.material}`
+  const usageMaterialBonus: Record<string, { frames: string[], bonus: number }[]> = {
+    'Quotidien|Acétate': [
+      { frames: ['Wayfarer', 'Rectangulaire', 'Clubmaster'], bonus: 10 },
+    ],
+    'Quotidien|Métal': [
+      { frames: ['Aviateur', 'Rimless', 'Rectangulaire fin'], bonus: 10 },
+    ],
+    'Quotidien|Mixte': [
+      { frames: ['Browline', 'Clubmaster', 'Wayfarer'], bonus: 8 },
+    ],
+    'Écrans|Acétate': [
+      { frames: ['Rectangulaire', 'Browline'], bonus: 12 },
+      { frames: ['Oversized', 'Wayfarer'], bonus: -6 },
+    ],
+    'Écrans|Métal': [
+      { frames: ['Rectangulaire fin', 'Rimless', 'Géométrique'], bonus: 12 },
+    ],
+    'Sport|Acétate': [
+      { frames: ['Wayfarer', 'Oversized'], bonus: 10 },
+    ],
+    'Sport|Métal': [
+      { frames: ['Aviateur', 'Wrap', 'Rimless'], bonus: 12 },
+    ],
+    'Fashion|Acétate': [
+      { frames: ['Cat-eye', 'Oversized', 'Clubmaster'], bonus: 15 },
+    ],
+    'Fashion|Métal': [
+      { frames: ['Cat-eye', 'Géométrique', 'Aviateur'], bonus: 12 },
+    ],
+  }
+
+  const umBonus = usageMaterialBonus[usageMaterial] || []
+  umBonus.forEach(({ frames, bonus }) => {
+    frames.forEach(frame => {
+      if (scores[frame] !== undefined) scores[frame] += bonus
+    })
+  })
+
+  // Combinaison Personnalité + Couleurs
+  const personalityColors = `${context.personality}|${context.colors}`
+  const personalityColorsBonus: Record<string, { frames: string[], bonus: number }[]> = {
+    'Discret|Neutres': [
+      { frames: ['Rimless', 'Rectangulaire fin', 'Aviateur'], bonus: 12 },
+      { frames: ['Oversized', 'Cat-eye'], bonus: -8 },
+    ],
+    'Discret|Sombres': [
+      { frames: ['Rectangulaire fin', 'Wayfarer', 'Aviateur'], bonus: 10 },
+    ],
+    'Affirmé|Colorées': [
+      { frames: ['Cat-eye', 'Oversized', 'Géométrique'], bonus: 15 },
+      { frames: ['Rimless', 'Rectangulaire fin'], bonus: -10 },
+    ],
+    'Affirmé|Sombres': [
+      { frames: ['Wayfarer', 'Oversized', 'Browline'], bonus: 12 },
+    ],
+    'Affirmé|Neutres': [
+      { frames: ['Wayfarer', 'Clubmaster', 'Géométrique'], bonus: 10 },
+    ],
+    'Affirmé|Mixtes': [
+      { frames: ['Cat-eye', 'Géométrique', 'Clubmaster'], bonus: 12 },
+    ],
+    'Discret|Mixtes': [
+      { frames: ['Aviateur', 'Rectangulaire', 'Browline'], bonus: 8 },
+    ],
+    'Discret|Colorées': [
+      { frames: ['Rond fin', 'Géométrique', 'Rectangulaire fin'], bonus: 8 },
+    ],
+  }
+
+  const pcBonus = personalityColorsBonus[personalityColors] || []
+  pcBonus.forEach(({ frames, bonus }) => {
+    frames.forEach(frame => {
+      if (scores[frame] !== undefined) scores[frame] += bonus
+    })
+  })
+
+  // Budget — filtre les montures hors gamme
+  const budgetPenalty: Record<string, string[]> = {
+    'Moins de 100€': ['Rimless', 'Géométrique'],
+    '100-300€': [],
+    '300€+': [],
+  }
+  const penalizedFrames = budgetPenalty[context.budget] || []
+  penalizedFrames.forEach(frame => {
+    if (scores[frame] !== undefined) scores[frame] -= 15
+  })
+
+  // Poids des montures — confort
+  if (context.frame_weight === 'Légères') {
+    scores['Rimless'] = (scores['Rimless'] || 0) + 12
+    scores['Rectangulaire fin'] = (scores['Rectangulaire fin'] || 0) + 10
+    scores['Aviateur'] = (scores['Aviateur'] || 0) + 8
+    scores['Oversized'] = (scores['Oversized'] || 0) - 10
+  } else if (context.frame_weight === 'Robustes') {
+    scores['Wayfarer'] = (scores['Wayfarer'] || 0) + 10
+    scores['Clubmaster'] = (scores['Clubmaster'] || 0) + 8
+    scores['Rimless'] = (scores['Rimless'] || 0) - 8
+  }
+
+  // Expérience lunettes précédentes
+  if (context.existing_glasses === 'Je veux changer') {
+    const changeBonus = ['Cat-eye', 'Géométrique', 'Oversized', 'Clubmaster']
+    changeBonus.forEach(frame => {
+      if (scores[frame] !== undefined) scores[frame] += 8
+    })
+  } else if (context.existing_glasses === 'Première paire') {
+    const safeFrames = ['Rectangulaire', 'Wayfarer', 'Aviateur']
+    safeFrames.forEach(frame => {
+      if (scores[frame] !== undefined) scores[frame] += 10
+    })
   }
 
   // Si confidence faible, lisse les scores pour éviter une polarisation excessive

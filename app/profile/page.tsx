@@ -19,13 +19,18 @@ export default function ProfilePage() {
 
   const fetchScan = async () => {
     if (!session?.user?.id) return
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('scan')
       .select('*')
       .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
       .limit(1)
-    if (data?.[0]) setScanData(data[0])
+
+    console.log('fetchScan result:', data, error)
+    if (data?.[0]) {
+      console.log('scanData set to:', data[0])
+      setScanData(data[0])
+    }
   }
 
   useEffect(() => {
@@ -189,7 +194,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <span className="inline-block bg-[#0A2540] text-white text-base font-bold px-4 py-1.5 rounded-full capitalize">
+<span className="inline-block bg-[#0A2540] text-white text-base font-bold px-4 py-1.5 rounded-full capitalize">
                 {scanData.face_shape}
               </span>
               <div className="flex flex-wrap gap-2">

@@ -145,6 +145,7 @@ export default function OpticiansPage() {
   const [activeContext, setActiveContext] = useState<any>(null)
   const [showContextDropdown, setShowContextDropdown] = useState(false)
   const [showBanner, setShowBanner] = useState(false)
+  const contextAppliedRef = useRef(false)
 
   console.log('contexts:', contexts)
   console.log('activeContext:', activeContext)
@@ -172,20 +173,29 @@ export default function OpticiansPage() {
           return 0
         })
         setContexts(sorted)
-        setActiveContext(null)
-        setShowBanner(false)
-        setActiveFilters([])
+        if (!contextIdFromUrl) {
+          setActiveContext(null)
+          setShowBanner(false)
+          setActiveFilters([])
+        }
       }
     }
     loadContexts()
   }, [session])
 
   useEffect(() => {
+    contextAppliedRef.current = false
+  }, [contextIdFromUrl])
+
+  useEffect(() => {
     if (!contextIdFromUrl || contexts.length === 0 || !session?.user?.id) return
+    if (contextAppliedRef.current) return
 
     const ctx = contexts.find(c => c.id === contextIdFromUrl)
     if (!ctx) return
 
+    contextAppliedRef.current = true
+    console.log('Applying context from URL:', ctx.name)
     setActiveContext(ctx)
     setShowBanner(true)
 
@@ -215,13 +225,15 @@ export default function OpticiansPage() {
         const scanData = data?.[0]
         if (scanData) {
           const recs = getRecommendations(scanData, ctx)
+          console.log('recs:', recs.map(r => r.name))
           const frameNames = recs
             .map(r => frameTranslation[r.name] || r.name)
             .filter((v, i, a) => a.indexOf(v) === i)
+          console.log('frameNames:', frameNames)
           setActiveFilters(frameNames)
         }
       })
-  }, [contextIdFromUrl, contexts, session])
+  }, [contextIdFromUrl, contexts, session?.user?.id])
 
   const switchContext = async (contextId: string) => {
     await supabase

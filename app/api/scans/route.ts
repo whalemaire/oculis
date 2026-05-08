@@ -43,6 +43,8 @@ export async function POST(request: Request) {
     ratio_symmetry:    ratios?.symmetry,
   }
 
+  console.log('Saving scan:', { user_id, face_shape, existing: existing?.length })
+
   let data, error
 
   if (existing && existing.length > 0) {
@@ -58,6 +60,7 @@ export async function POST(request: Request) {
       .select())
   }
 
+  console.log('Save result:', { data, error })
   console.log('supabase error:', error)
   if (error) {
     console.error('Supabase error:', error)
