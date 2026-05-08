@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { useAuth } from '@/app/components/AuthProvider'
 
 type CameraState = 'requesting' | 'active' | 'denied'
 
@@ -9,6 +10,7 @@ export default function ScanPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const from = searchParams.get('from')
+  const { session } = useAuth()
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -79,10 +81,29 @@ export default function ScanPage() {
       }
 
       streamRef.current?.getTracks().forEach((t) => t.stop())
+
+      if (session?.user?.id) {
+        const scanResponse = await fetch('/api/scans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: session.user.id,
+            face_shape: data.faceShape,
+            confidence: data.confidence,
+            gender: data.gender,
+            age: data.age,
+            measurements: data.measurements,
+            ratios: data.ratios,
+          }),
+        })
+        const scanResult = await scanResponse.json()
+        console.log('Scan saved:', scanResult)
+      }
+
       if (from === 'profile') {
         router.push('/profile?updated=true')
       } else {
-        router.push(`/results?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.ipd}&ratio=${data.ratio}&gender=${data.gender}`)
+        router.push(`/results?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.measurements?.ipd ?? data.ipd}&ratio=${data.ratios?.heightWidth ?? data.ratio}&gender=${data.gender}`)
       }
     } catch {
       setError('Une erreur est survenue — réessaie')

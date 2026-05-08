@@ -1,5 +1,15 @@
 import { NextResponse } from 'next/server'
 
+function dist(a: {x:number,y:number}, b: {x:number,y:number}) {
+  return Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2))
+}
+function midpoint(a: {x:number,y:number}, b: {x:number,y:number}) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+}
+function round(n: number) {
+  return Math.round(n * 1000) / 1000
+}
+
 export async function POST(request: Request) {
   const { imageBase64 } = await request.json()
 
@@ -23,61 +33,76 @@ export async function POST(request: Request) {
   }
 
   const face = data.faces[0]
-  const landmarks = face.landmark
+  const l = face.landmark
 
-  console.log('Landmarks disponibles:', Object.keys(landmarks))
-  console.log('Valeurs landmarks:', JSON.stringify(landmarks, null, 2))
+  const faceWidth      = Math.abs(l.contour_right5.x - l.contour_left5.x)
+  const faceHeight     = dist(l.contour_chin,             midpoint(l.left_eyebrow_upper_middle, l.right_eyebrow_upper_middle))
+  const foreheadWidth  = Math.abs(l.right_eyebrow_right_corner.x - l.left_eyebrow_left_corner.x)
+  const jawWidth       = Math.abs(l.contour_right3.x - l.contour_left3.x)
+  const cheekWidth     = Math.abs(l.contour_right6.x - l.contour_left6.x)
+  const noseWidth      = dist(l.nose_left,                l.nose_right)
+  const noseLength     = dist(l.nose_contour_left1,       l.nose_contour_lower_middle)
+  const ipd            = dist(l.left_eye_center,          l.right_eye_center)
+  const chinHeight     = dist(l.contour_chin,             l.mouth_lower_lip_bottom)
 
-  const chin = landmarks.contour_chin
-  const leftCheek = landmarks.contour_left5
-  const rightCheek = landmarks.contour_right5
-  const leftJaw = landmarks.contour_left3
-  const rightJaw = landmarks.contour_right3
-  const leftBrow = landmarks.left_eyebrow_upper_middle
-  const rightBrow = landmarks.right_eyebrow_upper_middle
+  const ratioHeightWidth  = round(faceHeight / faceWidth)
+  const ratioJawForehead  = round(jawWidth / foreheadWidth)
+  const ratioCheekJaw     = round(cheekWidth / jawWidth)
+  const ratioNoseFace     = round(noseWidth / faceWidth)
+  const ratioEyeSpacing   = round(ipd / faceWidth)
+  const ratioForeheadFace = round(foreheadWidth / faceWidth)
+  const ratioChinFace     = round(chinHeight / faceHeight)
 
-  const faceWidth = Math.abs(rightCheek.x - leftCheek.x)
-  const jawWidth = Math.abs(rightJaw.x - leftJaw.x)
-  const browY = (leftBrow.y + rightBrow.y) / 2
-  const faceHeight = Math.abs(chin.y - browY)
-  const foreheadWidth = Math.abs(
-    landmarks.right_eyebrow_right_corner.x - landmarks.left_eyebrow_left_corner.x
-  )
-
-  const ratio = faceHeight / faceWidth
-  const jawRatio = jawWidth / faceWidth
-  const foreheadRatio = foreheadWidth / faceWidth
-
-  console.log('Mesures corrigées:', { faceWidth, jawWidth, foreheadWidth, faceHeight, ratio, jawRatio, foreheadRatio })
+  const leftHalfWidth  = dist(l.contour_left5,  { x: (l.contour_left5.x + l.contour_right5.x) / 2, y: (l.contour_left5.y + l.contour_right5.y) / 2 })
+  const rightHalfWidth = dist(l.contour_right5, { x: (l.contour_left5.x + l.contour_right5.x) / 2, y: (l.contour_left5.y + l.contour_right5.y) / 2 })
+  const symmetryScore  = Math.round((1 - Math.abs(leftHalfWidth - rightHalfWidth) / faceWidth) * 1000) / 1000
 
   let faceShape = 'oval'
-  if (ratio < 1.05) {
+  if (ratioHeightWidth < 1.05) {
     faceShape = 'round'
-  } else if (ratio >= 1.40) {
+  } else if (ratioHeightWidth > 1.40) {
     faceShape = 'oblong'
-  } else if (jawRatio > 0.85 && foreheadRatio > 0.85) {
+  } else if (ratioJawForehead > 0.95 && ratioCheekJaw < 1.05) {
     faceShape = 'square'
-  } else if (foreheadRatio > jawRatio + 0.15) {
+  } else if (ratioForeheadFace > 0.72 && ratioJawForehead < 0.75) {
     faceShape = 'heart'
   } else {
     faceShape = 'oval'
   }
 
-  const leftEye = landmarks.left_eye_center
-  const rightEye = landmarks.right_eye_center
-  const ipd = Math.round(Math.abs(rightEye.x - leftEye.x))
+  const measurements = {
+    faceWidth:     Math.round(faceWidth),
+    faceHeight:    Math.round(faceHeight),
+    foreheadWidth: Math.round(foreheadWidth),
+    jawWidth:      Math.round(jawWidth),
+    cheekWidth:    Math.round(cheekWidth),
+    noseWidth:     Math.round(noseWidth),
+    noseLength:    Math.round(noseLength),
+    ipd:           Math.round(ipd),
+    chinHeight:    Math.round(chinHeight),
+  }
 
-  const qualityValue = face.attributes?.facequality?.value
-  console.log('facequality raw value:', qualityValue)
+  const ratios = {
+    heightWidth:  ratioHeightWidth,
+    jawForehead:  ratioJawForehead,
+    cheekJaw:     ratioCheekJaw,
+    noseFace:     ratioNoseFace,
+    eyeSpacing:   ratioEyeSpacing,
+    foreheadFace: ratioForeheadFace,
+    chinFace:     ratioChinFace,
+    symmetry:     symmetryScore,
+  }
 
-  console.log('Résultat final:', { faceShape, confidence: qualityValue ? Math.round(qualityValue) : 85, ratio, faceWidth, faceHeight, ipd })
+  console.log('Measurements:', measurements)
+  console.log('Ratios:', ratios)
+  console.log('faceShape:', faceShape)
 
   return NextResponse.json({
     faceShape,
     confidence: Math.round(face.attributes?.facequality?.value) || 85,
-    age: face.attributes?.age?.value,
     gender: face.attributes?.gender?.value,
-    ipd,
-    ratio: Math.round(ratio * 100) / 100,
+    age: face.attributes?.age?.value,
+    measurements,
+    ratios,
   })
 }
