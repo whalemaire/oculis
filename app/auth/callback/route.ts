@@ -10,7 +10,20 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
-    await supabase.auth.exchangeCodeForSession(code)
+
+    const { data: { session } } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (session?.user?.id) {
+      const { data: contexts } = await supabase
+        .from('context')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .limit(1)
+
+      if (!contexts || contexts.length === 0) {
+        return NextResponse.redirect(new URL('/contexts/new', requestUrl.origin))
+      }
+    }
   }
 
   return NextResponse.redirect(new URL('/opticians', requestUrl.origin))

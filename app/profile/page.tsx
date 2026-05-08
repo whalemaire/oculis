@@ -11,6 +11,8 @@ export default function ProfilePage() {
   const [scan, setScan] = useState<any>(null)
   const [contexts, setContexts] = useState<any[]>([])
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null)
+  const [progressScore, setProgressScore] = useState(0)
+  const [progressSteps, setProgressSteps] = useState({ scan: false, account: false, context: false })
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -43,6 +45,19 @@ export default function ProfilePage() {
     setShowDeleteModal(null)
   }
 
+  useEffect(() => {
+    if (!session?.user?.id) return
+    const hasScan = !!scan
+    const hasAccount = !!session?.user?.id
+    const hasContext = contexts.length > 0
+    let score = 0
+    if (hasScan) score += 30
+    if (hasAccount) score += 20
+    if (hasContext) score += 50
+    setProgressScore(score)
+    setProgressSteps({ scan: hasScan, account: hasAccount, context: hasContext })
+  }, [session, scan, contexts])
+
   const goToResults = (ctx: any) => {
     if (!scan) return
     router.push(`/results?shape=${scan.face_shape}&confidence=${scan.confidence}&ipd=${scan.ipd}&ratio=${scan.ratio}&context=${ctx.id}`)
@@ -62,6 +77,53 @@ export default function ProfilePage() {
       </header>
 
       <div className="max-w-xl mx-auto px-5 py-6 space-y-4">
+
+        {/* Section 0 — Progression */}
+        {session && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-bold text-[#0A2540]">Ta progression</p>
+              <span className="text-sm font-bold text-[#1E3A8A]">{progressScore}%</span>
+            </div>
+
+            <div className="w-full bg-gray-100 rounded-full h-2 mb-4">
+              <div
+                className="bg-[#1E3A8A] h-2 rounded-full transition-all duration-500"
+                style={{ width: `${progressScore}%` }}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className={`flex flex-col items-center gap-1 p-3 rounded-xl text-center ${progressSteps.account ? 'bg-green-50' : 'bg-gray-50'}`}>
+                <span className="text-xl">{progressSteps.account ? '✅' : '👤'}</span>
+                <p className="text-[11px] font-semibold text-[#0A2540]">Compte</p>
+                <p className="text-[10px] text-gray-400">+20%</p>
+              </div>
+              <div className={`flex flex-col items-center gap-1 p-3 rounded-xl text-center ${progressSteps.scan ? 'bg-green-50' : 'bg-gray-50'}`}>
+                <span className="text-xl">{progressSteps.scan ? '✅' : '📷'}</span>
+                <p className="text-[11px] font-semibold text-[#0A2540]">Scan</p>
+                <p className="text-[10px] text-gray-400">+30%</p>
+              </div>
+              <div className={`flex flex-col items-center gap-1 p-3 rounded-xl text-center ${progressSteps.context ? 'bg-green-50' : 'bg-gray-50'}`}>
+                <span className="text-xl">{progressSteps.context ? '✅' : '🎯'}</span>
+                <p className="text-[11px] font-semibold text-[#0A2540]">Contexte</p>
+                <p className="text-[10px] text-gray-400">+50%</p>
+              </div>
+            </div>
+
+            {progressScore < 100 && (
+              <button
+                onClick={() => {
+                  if (!progressSteps.scan) router.push('/scan')
+                  else if (!progressSteps.context) router.push('/contexts/new')
+                }}
+                className="mt-4 w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#162d6b] transition-colors"
+              >
+                {!progressSteps.scan ? '📷 Faire mon scan facial' : '🎯 Créer mon premier contexte'}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Section 1 — Mes mensurations */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">

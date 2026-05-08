@@ -367,6 +367,42 @@ export default function OpticiansPage() {
         </div>
       </header>
 
+      {/* Onboarding banner — non connecté */}
+      {!session && (
+        <div style={{
+          background: 'linear-gradient(135deg, #0A2540 0%, #1E3A8A 100%)',
+          padding: '14px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div>
+            <p style={{ color: 'white', fontWeight: '600', fontSize: '14px', margin: 0 }}>
+              👓 Trouve les lunettes faites pour toi
+            </p>
+            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', margin: '2px 0 0' }}>
+              Scanne ton visage en 10 secondes
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/scan')}
+            style={{
+              background: 'white',
+              color: '#0A2540',
+              padding: '8px 20px',
+              borderRadius: '100px',
+              fontSize: '13px',
+              fontWeight: '600',
+              border: 'none',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Commencer →
+          </button>
+        </div>
+      )}
+
       {/* Context banner */}
       {activeContext && showBanner && (
         <div className="flex items-center justify-between px-5 py-2 bg-secondary-lighter border-b border-secondary-light text-xs text-secondary">

@@ -57,6 +57,17 @@ export default function ResultsPage() {
   const [showToast, setShowToast] = useState(false)
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [activeContext, setActiveContext] = useState<any>(null)
+  const [hasContext, setHasContext] = useState(false)
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    supabase
+      .from('context')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .limit(1)
+      .then(({ data }) => setHasContext(!!data && data.length > 0))
+  }, [session])
 
   const shape = params.get('shape') ?? 'oval'
   const confidence = params.get('confidence') ?? '85'
@@ -161,14 +172,43 @@ export default function ResultsPage() {
 
       <div className="max-w-xl mx-auto w-full px-5 py-6 space-y-6">
 
-        {/* Completion banner — non connecté */}
+        {/* Completion banner — non connecté (30%) */}
         {!session && (
-          <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '12px', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <p style={{ color: '#92400E', fontWeight: '600', fontSize: '14px' }}>Profil complété à 10%</p>
-              <p style={{ color: '#B45309', fontSize: '12px' }}>Crée un compte pour affiner tes résultats</p>
+          <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <p style={{ color: '#92400E', fontWeight: '600', fontSize: '14px', margin: 0 }}>Profil complété à 30%</p>
+              <span style={{ background: '#F59E0B', color: 'white', borderRadius: '100px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>30%</span>
             </div>
-            <div style={{ background: '#F59E0B', borderRadius: '100px', padding: '4px 8px', fontSize: '12px', color: 'white', fontWeight: '600' }}>10%</div>
+            <div style={{ background: '#FDE68A', borderRadius: '100px', height: '6px', marginBottom: '12px' }}>
+              <div style={{ background: '#F59E0B', borderRadius: '100px', height: '6px', width: '30%', transition: 'width 0.5s ease' }}/>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: '#92400E' }}>
+              <span>✅ Scan fait</span>
+              <span style={{ color: '#D97706' }}>·</span>
+              <span>⬜ Compte créé</span>
+              <span style={{ color: '#D97706' }}>·</span>
+              <span>⬜ Contexte créé</span>
+            </div>
+          </div>
+        )}
+
+        {/* Completion banner — connecté sans contexte (50%) */}
+        {session && !hasContext && (
+          <div style={{ background: '#EEF2FF', border: '1px solid #1E3A8A', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <p style={{ color: '#1E3A8A', fontWeight: '600', fontSize: '14px', margin: 0 }}>Profil complété à 50%</p>
+              <span style={{ background: '#1E3A8A', color: 'white', borderRadius: '100px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>50%</span>
+            </div>
+            <div style={{ background: '#C7D2FE', borderRadius: '100px', height: '6px', marginBottom: '12px' }}>
+              <div style={{ background: '#1E3A8A', borderRadius: '100px', height: '6px', width: '50%', transition: 'width 0.5s ease' }}/>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: '#1E3A8A' }}>
+              <span>✅ Scan fait</span>
+              <span>·</span>
+              <span>✅ Compte créé</span>
+              <span>·</span>
+              <span>⬜ Contexte créé</span>
+            </div>
           </div>
         )}
 
