@@ -1,8 +1,10 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
-import dynamic from 'next/dynamic'
+import noSSR from 'next/dynamic'
 import { useAuth } from '@/app/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import { getRecommendations } from '@/lib/recommendationEngine'
@@ -128,7 +130,7 @@ function LeafletMapInner({ opticians, onMarkerClick }: { opticians: Optician[], 
   return <div ref={containerRef} className="w-full h-full" />
 }
 
-const LeafletMap = dynamic(
+const LeafletMap = noSSR(
   () => Promise.resolve({ default: LeafletMapInner }),
   { ssr: false }
 )
