@@ -127,6 +127,7 @@ export default function ResultsPage() {
   }, [session])
 
   const from = params.get('from')
+  const contextId = params.get('contextId')
   const shape = params.get('shape') ?? 'oval'
   const confidence = params.get('confidence') ?? '85'
   const ipd = params.get('ipd') ?? '64'
@@ -166,12 +167,9 @@ export default function ResultsPage() {
     if (!session?.user?.id) return
 
     const loadRecommendations = async () => {
-      const { data: contextData } = await supabase
-        .from('context')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .eq('is_active', true)
-        .single()
+      const { data: contextData } = contextId
+        ? await supabase.from('context').select('*').eq('id', contextId).single()
+        : await supabase.from('context').select('*').eq('user_id', session.user.id).eq('is_active', true).single()
 
       const { data: scanArray } = await supabase
         .from('scan')
@@ -212,6 +210,7 @@ export default function ResultsPage() {
   }, [session])
 
   useEffect(() => {
+    if (from === 'profile') return
     const show = setTimeout(() => setShowToast(true), 1000)
     const hide = setTimeout(() => setShowToast(false), 4000)
     return () => { clearTimeout(show); clearTimeout(hide) }
@@ -233,7 +232,7 @@ export default function ResultsPage() {
       <div className="max-w-xl mx-auto w-full px-5 py-6 space-y-6">
 
         {/* Completion banner — non connecté (30%) */}
-        {!session && (
+        {!session && from !== 'profile' && (
           <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <p style={{ color: '#92400E', fontWeight: '600', fontSize: '14px', margin: 0 }}>Profil complété à 30%</p>
@@ -253,7 +252,7 @@ export default function ResultsPage() {
         )}
 
         {/* Completion banner — connecté sans contexte (50%) */}
-        {session && !hasContext && (
+        {session && !hasContext && from !== 'profile' && (
           <div style={{ background: '#EEF2FF', border: '1px solid #1E3A8A', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <p style={{ color: '#1E3A8A', fontWeight: '600', fontSize: '14px', margin: 0 }}>Profil complété à 50%</p>
@@ -402,7 +401,7 @@ export default function ResultsPage() {
             </>
           ) : (
             <button
-              onClick={() => router.push(`/opticians?frames=${recommendations.map((r) => r.name).join(',')}`)}
+              onClick={() => router.push(`/opticians?contextId=${contextId || ''}`)}
               className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
             >
               Trouver ces montures près de moi →

@@ -136,6 +136,7 @@ const LeafletMap = dynamic(
 export default function OpticiansPage() {
   const router = useRouter()
   const params = useSearchParams()
+  const contextIdFromUrl = params.get('contextId')
   const { session } = useAuth()
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -158,19 +159,69 @@ export default function OpticiansPage() {
 
   useEffect(() => {
     if (!session?.user?.id) return
+    const loadContexts = async () => {
+      await fetch(`/api/contexts?user_id=${session.user.id}`)
+      const { data } = await supabase
+        .from('context')
+        .select('*')
+        .eq('user_id', session.user.id)
+      if (data) {
+        const sorted = [...data].sort((a, b) => {
+          if (a.name === 'Mon profil de base') return -1
+          if (b.name === 'Mon profil de base') return 1
+          return 0
+        })
+        setContexts(sorted)
+        setActiveContext(null)
+        setShowBanner(false)
+        setActiveFilters([])
+      }
+    }
+    loadContexts()
+  }, [session])
+
+  useEffect(() => {
+    if (!contextIdFromUrl || contexts.length === 0 || !session?.user?.id) return
+
+    const ctx = contexts.find(c => c.id === contextIdFromUrl)
+    if (!ctx) return
+
+    setActiveContext(ctx)
+    setShowBanner(true)
+
+    const frameTranslation: Record<string, string> = {
+      'Rectangulaire': 'Rectangular',
+      'Rectangulaire fin': 'Rectangular',
+      'Aviateur': 'Aviator',
+      'Rond': 'Round',
+      'Rond fin': 'Round',
+      'Cat-eye': 'Cat-eye',
+      'Wayfarer': 'Wayfarer',
+      'Browline': 'Browline',
+      'Géométrique': 'Geometric',
+      'Rimless': 'Rimless',
+      'Oversized': 'Oversized',
+      'Clubmaster': 'Clubmaster',
+      'Ovale fin': 'Oval',
+      'Wrap': 'Wrap',
+    }
+
     supabase
-      .from('context')
+      .from('scan')
       .select('*')
       .eq('user_id', session.user.id)
+      .limit(1)
       .then(({ data }) => {
-        if (data) {
-          setContexts(data)
-          setActiveContext(null)
-          setShowBanner(false)
-          setActiveFilters([])
+        const scanData = data?.[0]
+        if (scanData) {
+          const recs = getRecommendations(scanData, ctx)
+          const frameNames = recs
+            .map(r => frameTranslation[r.name] || r.name)
+            .filter((v, i, a) => a.indexOf(v) === i)
+          setActiveFilters(frameNames)
         }
       })
-  }, [session])
+  }, [contextIdFromUrl, contexts, session])
 
   const switchContext = async (contextId: string) => {
     await supabase
@@ -333,7 +384,10 @@ export default function OpticiansPage() {
                             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', fontSize: '14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                           >
                             <span style={{ color: '#0A2540', fontWeight: '500' }}>{ctx.name}</span>
-                            {activeContext?.id === ctx.id && <span style={{ color: '#1E3A8A' }}>✓</span>}
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {ctx.name === 'Mon profil de base' && <span style={{ fontSize: '12px' }}>🔒</span>}
+                              {activeContext?.id === ctx.id && <span style={{ color: '#1E3A8A' }}>✓</span>}
+                            </span>
                           </button>
                         ))}
                         <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '4px', paddingTop: '4px' }}>

@@ -45,7 +45,16 @@ export default function ProfilePage() {
       .select('*')
       .eq('user_id', session.user.id)
       .order('id', { ascending: false })
-      .then(({ data }) => { if (data) setContexts(data) })
+      .then(({ data }) => {
+        if (data) {
+          const sorted = [...data].sort((a, b) => {
+            if (a.name === 'Mon profil de base') return -1
+            if (b.name === 'Mon profil de base') return 1
+            return 0
+          })
+          setContexts(sorted)
+        }
+      })
   }, [session])
 
   async function signOut() {
@@ -72,9 +81,8 @@ export default function ProfilePage() {
     setProgressSteps({ scan: hasScan, account: hasAccount, context: hasContext })
   }, [session, scanData, contexts])
 
-  const goToResults = (_ctx: any) => {
-    if (!scanData) return
-    router.push(`/results?from=profile`)
+  const goToResults = (ctx: any) => {
+    router.push(`/results?from=profile&contextId=${ctx.id}`)
   }
 
   return (
@@ -255,12 +263,14 @@ export default function ProfilePage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setShowDeleteModal(ctx.id) }}
-                        className="text-gray-300 hover:text-gray-400 transition-colors text-base leading-none"
-                      >
-                        🗑️
-                      </button>
+                      {ctx.name !== 'Mon profil de base' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setShowDeleteModal(ctx.id) }}
+                          className="text-gray-300 hover:text-gray-400 transition-colors text-base leading-none"
+                        >
+                          🗑️
+                        </button>
+                      )}
                       <span className="text-[#1E3A8A] text-sm">→</span>
                     </div>
                   </div>
