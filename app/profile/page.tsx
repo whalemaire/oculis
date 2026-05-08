@@ -1,31 +1,45 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/app/components/AuthProvider'
 
 export default function ProfilePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const updated = searchParams.get('updated')
   const { session } = useAuth()
-  const [scan, setScan] = useState<any>(null)
+  const [scanData, setScanData] = useState<any>(null)
   const [contexts, setContexts] = useState<any[]>([])
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null)
   const [progressScore, setProgressScore] = useState(0)
   const [progressSteps, setProgressSteps] = useState({ scan: false, account: false, context: false })
+  const [showToast, setShowToast] = useState(false)
 
-  useEffect(() => {
+  const fetchScan = async () => {
     if (!session?.user?.id) return
-
-    supabase
+    const { data } = await supabase
       .from('scan')
       .select('*')
       .eq('user_id', session.user.id)
-      .order('id', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(1)
-      .single()
-      .then(({ data }) => { if (data) setScan(data) })
+    if (data?.[0]) setScanData(data[0])
+  }
 
+  useEffect(() => {
+    if (updated === 'true') {
+      fetchScan()
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    }
+  }, [updated, session])
+
+  useEffect(() => {
+    fetchScan()
+
+    if (!session?.user?.id) return
     supabase
       .from('context')
       .select('*')
@@ -47,7 +61,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!session?.user?.id) return
-    const hasScan = !!scan
+    const hasScan = !!scanData
     const hasAccount = !!session?.user?.id
     const hasContext = contexts.length > 0
     let score = 0
@@ -56,15 +70,33 @@ export default function ProfilePage() {
     if (hasContext) score += 50
     setProgressScore(score)
     setProgressSteps({ scan: hasScan, account: hasAccount, context: hasContext })
-  }, [session, scan, contexts])
+  }, [session, scanData, contexts])
 
-  const goToResults = (ctx: any) => {
-    if (!scan) return
-    router.push(`/results?shape=${scan.face_shape}&confidence=${scan.confidence}&ipd=${scan.ipd}&ratio=${scan.ratio}&context=${ctx.id}`)
+  const goToResults = (_ctx: any) => {
+    if (!scanData) return
+    router.push(`/results?from=profile`)
   }
 
   return (
     <main className="min-h-screen bg-[#F4F6F9]">
+      {showToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#10B981',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '100px',
+          fontSize: '14px',
+          fontWeight: '600',
+          zIndex: 9999,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}>
+          ✓ Scan mis à jour avec succès
+        </div>
+      )}
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100">
         <span className="text-xl font-bold text-[#0A2540]">Mon profil</span>
@@ -129,14 +161,14 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-center justify-between mb-4">
             <p className="font-bold text-[#0A2540]">Mes mensurations faciales</p>
-            {scan && (
+            {scanData && (
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EEF2FF] text-[#1E3A8A]">
                 1 scan biométrique
               </span>
             )}
           </div>
 
-          {!scan ? (
+          {!scanData ? (
             <div className="flex flex-col items-center py-8 gap-3">
               <span className="text-4xl opacity-30">📷</span>
               <p className="text-sm text-gray-400">Aucun scan pour l'instant</p>
@@ -150,24 +182,24 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-3">
               <span className="inline-block bg-[#0A2540] text-white text-base font-bold px-4 py-1.5 rounded-full capitalize">
-                {scan.face_shape}
+                {scanData.face_shape}
               </span>
               <div className="flex flex-wrap gap-2">
                 <span className="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full">
-                  Ratio {scan.ratio}
+                  Ratio {scanData.ratio}
                 </span>
                 <span className="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full">
-                  PD {scan.ipd}mm
+                  PD {scanData.ipd}mm
                 </span>
                 <span className="bg-gray-100 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-full">
-                  Confiance {scan.confidence}%
+                  Confiance {scanData.confidence}%
                 </span>
               </div>
               <p className="text-xs text-gray-400">
-                Scanné le {new Date(scan.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                Scanné le {new Date(scanData.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
               <button
-                onClick={() => router.push('/scan')}
+                onClick={() => router.push('/scan?from=profile')}
                 className="border border-[#1E3A8A] text-[#1E3A8A] px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#EEF2FF] transition-colors"
               >
                 🔄 Refaire le scan

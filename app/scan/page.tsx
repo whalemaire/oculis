@@ -1,12 +1,14 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 type CameraState = 'requesting' | 'active' | 'denied'
 
 export default function ScanPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const from = searchParams.get('from')
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -77,7 +79,11 @@ export default function ScanPage() {
       }
 
       streamRef.current?.getTracks().forEach((t) => t.stop())
-      router.push(`/results?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.ipd}&ratio=${data.ratio}`)
+      if (from === 'profile') {
+        router.push('/profile?updated=true')
+      } else {
+        router.push(`/results?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.ipd}&ratio=${data.ratio}&gender=${data.gender}`)
+      }
     } catch {
       setError('Une erreur est survenue — réessaie')
       setAnalyzing(false)
@@ -90,7 +96,7 @@ export default function ScanPage() {
       <header className="flex items-center justify-between px-6 py-3.5 border-b border-border">
         <span className="text-xl font-bold text-primary">Oculis</span>
         <button
-          onClick={() => router.push('/opticians')}
+          onClick={() => router.push(from === 'profile' ? '/profile' : '/opticians')}
           className="text-sm text-muted hover:text-subtle flex items-center gap-1 transition-colors"
         >
           ← Retour

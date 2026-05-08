@@ -143,7 +143,7 @@ export default function OpticiansPage() {
   const [contexts, setContexts] = useState<any[]>([])
   const [activeContext, setActiveContext] = useState<any>(null)
   const [showContextDropdown, setShowContextDropdown] = useState(false)
-  const [showBanner, setShowBanner] = useState(true)
+  const [showBanner, setShowBanner] = useState(false)
 
   console.log('contexts:', contexts)
   console.log('activeContext:', activeContext)
@@ -165,8 +165,9 @@ export default function OpticiansPage() {
       .then(({ data }) => {
         if (data) {
           setContexts(data)
-          const active = data.find((c) => c.is_active) ?? data[0] ?? null
-          setActiveContext(active)
+          setActiveContext(null)
+          setShowBanner(false)
+          setActiveFilters([])
         }
       })
   }, [session])

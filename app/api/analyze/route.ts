@@ -25,15 +25,43 @@ export async function POST(request: Request) {
   const face = data.faces[0]
   const landmarks = face.landmark
 
-  const faceWidth = Math.abs(landmarks.contour_left1.x - landmarks.contour_right1.x)
-  const faceHeight = Math.abs(landmarks.contour_chin.y - landmarks.contour_left1.y)
+  console.log('Landmarks disponibles:', Object.keys(landmarks))
+  console.log('Valeurs landmarks:', JSON.stringify(landmarks, null, 2))
+
+  const chin = landmarks.contour_chin
+  const leftCheek = landmarks.contour_left5
+  const rightCheek = landmarks.contour_right5
+  const leftJaw = landmarks.contour_left3
+  const rightJaw = landmarks.contour_right3
+  const leftBrow = landmarks.left_eyebrow_upper_middle
+  const rightBrow = landmarks.right_eyebrow_upper_middle
+
+  const faceWidth = Math.abs(rightCheek.x - leftCheek.x)
+  const jawWidth = Math.abs(rightJaw.x - leftJaw.x)
+  const browY = (leftBrow.y + rightBrow.y) / 2
+  const faceHeight = Math.abs(chin.y - browY)
+  const foreheadWidth = Math.abs(
+    landmarks.right_eyebrow_right_corner.x - landmarks.left_eyebrow_left_corner.x
+  )
+
   const ratio = faceHeight / faceWidth
+  const jawRatio = jawWidth / faceWidth
+  const foreheadRatio = foreheadWidth / faceWidth
+
+  console.log('Mesures corrigées:', { faceWidth, jawWidth, foreheadWidth, faceHeight, ratio, jawRatio, foreheadRatio })
 
   let faceShape = 'oval'
-  if (ratio >= 1.20) faceShape = 'oblong'
-  else if (ratio >= 1.05) faceShape = 'oval'
-  else if (ratio >= 0.95) faceShape = 'square'
-  else faceShape = 'round'
+  if (ratio < 1.05) {
+    faceShape = 'round'
+  } else if (ratio >= 1.40) {
+    faceShape = 'oblong'
+  } else if (jawRatio > 0.85 && foreheadRatio > 0.85) {
+    faceShape = 'square'
+  } else if (foreheadRatio > jawRatio + 0.15) {
+    faceShape = 'heart'
+  } else {
+    faceShape = 'oval'
+  }
 
   const leftEye = landmarks.left_eye_center
   const rightEye = landmarks.right_eye_center

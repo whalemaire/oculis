@@ -43,11 +43,68 @@ function framesvg(name: string) {
   return SVG_RECT
 }
 
-const CELEBRITIES = [
-  { initial: 'GC', name: 'George Clooney', job: 'Acteur' },
-  { initial: 'BH', name: 'Bella Hadid', job: 'Mannequin' },
-  { initial: 'RG', name: 'Ryan Gosling', job: 'Acteur' },
-]
+const CELEBRITIES = {
+  oval: {
+    male: [
+      { name: 'George Clooney', profession: 'Acteur' },
+      { name: 'Ryan Gosling', profession: 'Acteur' },
+      { name: 'David Beckham', profession: 'Footballeur' },
+    ],
+    female: [
+      { name: 'Bella Hadid', profession: 'Mannequin' },
+      { name: 'Beyoncé', profession: 'Chanteuse' },
+      { name: 'Jessica Alba', profession: 'Actrice' },
+    ]
+  },
+  round: {
+    male: [
+      { name: 'Leonardo DiCaprio', profession: 'Acteur' },
+      { name: 'Jack Black', profession: 'Acteur' },
+      { name: 'Elijah Wood', profession: 'Acteur' },
+    ],
+    female: [
+      { name: 'Selena Gomez', profession: 'Chanteuse' },
+      { name: 'Adele', profession: 'Chanteuse' },
+      { name: 'Chrissy Teigen', profession: 'Mannequin' },
+    ]
+  },
+  square: {
+    male: [
+      { name: 'Brad Pitt', profession: 'Acteur' },
+      { name: 'Tom Hardy', profession: 'Acteur' },
+      { name: 'Arnold Schwarzenegger', profession: 'Acteur' },
+    ],
+    female: [
+      { name: 'Angelina Jolie', profession: 'Actrice' },
+      { name: 'Demi Moore', profession: 'Actrice' },
+      { name: 'Keira Knightley', profession: 'Actrice' },
+    ]
+  },
+  heart: {
+    male: [
+      { name: 'Ryan Reynolds', profession: 'Acteur' },
+      { name: 'Justin Timberlake', profession: 'Chanteur' },
+      { name: 'Zac Efron', profession: 'Acteur' },
+    ],
+    female: [
+      { name: 'Reese Witherspoon', profession: 'Actrice' },
+      { name: 'Scarlett Johansson', profession: 'Actrice' },
+      { name: 'Halle Berry', profession: 'Actrice' },
+    ]
+  },
+  oblong: {
+    male: [
+      { name: 'Adam Driver', profession: 'Acteur' },
+      { name: 'Ben Stiller', profession: 'Acteur' },
+      { name: 'Keanu Reeves', profession: 'Acteur' },
+    ],
+    female: [
+      { name: 'Sarah Jessica Parker', profession: 'Actrice' },
+      { name: 'Liv Tyler', profession: 'Actrice' },
+      { name: 'Tilda Swinton', profession: 'Actrice' },
+    ]
+  }
+}
 
 
 export default function ResultsPage() {
@@ -69,11 +126,14 @@ export default function ResultsPage() {
       .then(({ data }) => setHasContext(!!data && data.length > 0))
   }, [session])
 
+  const from = params.get('from')
   const shape = params.get('shape') ?? 'oval'
   const confidence = params.get('confidence') ?? '85'
   const ipd = params.get('ipd') ?? '64'
   const ratio = params.get('ratio') ?? '1.10'
+  const gender = params.get('gender') === 'Female' ? 'female' : 'male'
   const shapeLabel = shape.charAt(0).toUpperCase() + shape.slice(1) + ' Face'
+  const celebrities = CELEBRITIES[shape as keyof typeof CELEBRITIES]?.[gender] || CELEBRITIES.oval.male
   useEffect(() => {
     if (!session?.user?.id) return
 
@@ -163,7 +223,7 @@ export default function ResultsPage() {
       <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100">
         <span className="text-xl font-bold text-[#0A2540]">Oculis</span>
         <button
-          onClick={() => router.push('/scan')}
+          onClick={() => router.push(from === 'profile' ? '/profile' : '/scan')}
           className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
         >
           ← Retour
@@ -236,17 +296,17 @@ export default function ResultsPage() {
             Visages similaires
           </p>
           <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
-            {CELEBRITIES.map((celeb) => (
+            {celebrities.map((celeb) => (
               <div
                 key={celeb.name}
                 className="flex-shrink-0 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center gap-2 w-36"
               >
                 <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-base font-bold text-gray-400">
-                  {celeb.initial}
+                  {celeb.name.split(' ').map((n: string) => n[0]).join('')}
                 </div>
                 <div className="text-center">
                   <p className="text-xs font-bold text-[#0A2540] leading-tight">{celeb.name}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">{celeb.job}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{celeb.profession}</p>
                 </div>
                 <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                   Même forme
