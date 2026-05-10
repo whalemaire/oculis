@@ -137,22 +137,6 @@ export default function ResultsPage() {
   const gender = params.get('gender') === 'Female' ? 'female' : 'male'
   const shapeLabel = shape.charAt(0).toUpperCase() + shape.slice(1) + ' Face'
   const celebrities = CELEBRITIES[shape as keyof typeof CELEBRITIES]?.[gender] || CELEBRITIES.oval.male
-  useEffect(() => {
-    if (!session?.user?.id) return
-
-    fetch('/api/scans', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: session.user.id,
-        face_shape: shape,
-        confidence: Number(confidence),
-        ipd: Number(ipd),
-        ratio: Number(ratio),
-      }),
-    })
-  }, [session])
-
   // UseEffect 1 — sans session, utilise les params URL
   useEffect(() => {
     if (session) return

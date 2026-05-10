@@ -67,11 +67,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 
-  await supabase
-    .from('context')
-    .update({ name: 'Mon profil de base' })
-    .eq('user_id', user_id)
-    .eq('name', 'Mon profil de base')
+  if (!error && face_shape) {
+    const { error: ctxError } = await supabase
+      .from('context')
+      .update({
+        name: 'Mon profil de base',
+        style: face_shape,
+      })
+      .eq('user_id', user_id)
+      .eq('name', 'Mon profil de base')
+
+    console.log('Context base updated:', ctxError ? ctxError : 'OK')
+  }
 
   return NextResponse.json({ success: true, scan: data![0] })
 }

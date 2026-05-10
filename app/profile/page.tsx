@@ -21,6 +21,7 @@ export default function ProfilePage() {
 
   const fetchScan = async () => {
     if (!session?.user?.id) return
+    console.log('fetchScan called for user:', session.user.id)
     const { data, error } = await supabase
       .from('scan')
       .select('*')
@@ -28,11 +29,9 @@ export default function ProfilePage() {
       .order('id', { ascending: false })
       .limit(1)
 
-    console.log('fetchScan result:', data, error)
-    if (data?.[0]) {
-      console.log('scanData set to:', data[0])
-      setScanData(data[0])
-    }
+    console.log('fetchScan raw data:', data)
+    console.log('fetchScan error:', error)
+    if (data?.[0]) setScanData(data[0])
   }
 
   useEffect(() => {
@@ -47,21 +46,27 @@ export default function ProfilePage() {
     fetchScan()
 
     if (!session?.user?.id) return
-    supabase
-      .from('context')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('id', { ascending: false })
-      .then(({ data }) => {
-        if (data) {
-          const sorted = [...data].sort((a, b) => {
-            if (a.name === 'Mon profil de base') return -1
-            if (b.name === 'Mon profil de base') return 1
-            return 0
-          })
-          setContexts(sorted)
-        }
-      })
+
+    const fetchContexts = async () => {
+      const { data } = await supabase
+        .from('context')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('id', { ascending: false })
+
+      console.log('contexts fetched:', JSON.stringify(data?.map(c => ({ name: c.name, style: c.style }))))
+
+      if (data) {
+        const sorted = [...data].sort((a, b) => {
+          if (a.name === 'Mon profil de base') return -1
+          if (b.name === 'Mon profil de base') return 1
+          return 0
+        })
+        setContexts(sorted)
+      }
+    }
+
+    fetchContexts()
   }, [session])
 
   async function signOut() {
@@ -89,7 +94,7 @@ export default function ProfilePage() {
   }, [session, scanData, contexts])
 
   const goToResults = (ctx: any) => {
-    router.push(`/results?from=profile&contextId=${ctx.id}`)
+    router.push(`/results?from=profile&contextId=${ctx.id}&shape=${scanData?.face_shape || 'oval'}&confidence=${scanData?.confidence || 85}&ipd=${scanData?.ipd || 64}&ratio=${scanData?.ratio || 0.8}&gender=${scanData?.gender || 'Male'}`)
   }
 
   return (
