@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/app/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import { getRecommendations } from '@/lib/recommendationEngine'
+import { getTopFrames } from '@/lib/frameScoring'
 
 const SVG_RECT = (
   <svg width="96" height="40" viewBox="0 0 96 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -121,8 +122,9 @@ export default function ResultsPage() {
   const [feedbackList, setFeedbackList] = useState<any[]>([])
   const [scanData, setScanData] = useState<any>(null)
   const [orderedRecs, setOrderedRecs] = useState<any[]>([])
-  const [scoreChanges, setScoreChanges] = useState<Record<string, number>>({})
   const [feedbackToast, setFeedbackToast] = useState<{ message: string, type: 'like' | 'dislike' } | null>(null)
+  const [topFrames, setTopFrames] = useState<any[]>([])
+  const [hasFeedback, setHasFeedback] = useState(false)
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -166,9 +168,6 @@ export default function ResultsPage() {
   const sendFeedback = async (frameName: string, signalType: 'like' | 'dislike') => {
     if (!session?.user?.id) return
 
-    const oldScores: Record<string, number> = {}
-    orderedRecs.forEach(r => { oldScores[r.name] = r.score })
-
     setFeedbacks(prev => ({ ...prev, [frameName]: signalType }))
 
     const newFeedback = {
@@ -188,15 +187,9 @@ export default function ResultsPage() {
       const recs = getRecommendations(scanData, activeContext, updatedList)
       setRecommendations(recs)
 
-      const changes: Record<string, number> = {}
-      recs.forEach(r => {
-        const diff = r.score - (oldScores[r.name] || r.score)
-        if (Math.abs(diff) > 1) changes[r.name] = Math.round(diff)
-      })
-      setScoreChanges(changes)
-      setTimeout(() => setScoreChanges({}), 2000)
     }
 
+    setHasFeedback(true)
     setFeedbackToast({
       message: signalType === 'like'
         ? 'Préférence enregistrée — tes prochains résultats seront affinés ✓'
@@ -277,8 +270,23 @@ export default function ResultsPage() {
         const recs = getRecommendations(scanWithProbs, contextData, feedbackList)
         console.log('recommendations:', recs)
         setRecommendations(recs)
+
+        const frames = getTopFrames(
+          {
+            face_shape: scanWithProbs.face_shape,
+            ipd: scanWithProbs.ipd,
+            face_width: scanWithProbs.face_width,
+            ratio: scanWithProbs.ratio,
+            nose_width: scanWithProbs.nose_width,
+            ratio_cheek_jaw: scanWithProbs.ratio_cheek_jaw,
+            shape_probabilities: scanWithProbs.shape_probabilities,
+          },
+          contextData,
+          6
+        )
+        setTopFrames(frames)
       } else if (scanWithProbs) {
-        const recs = getRecommendations(scanWithProbs, {
+        const fallbackContext = {
           style: 'Classique',
           usage: 'Quotidien',
           correction: 'Vue',
@@ -287,9 +295,25 @@ export default function ResultsPage() {
           colors: 'Neutres',
           personality: 'Discret',
           frame_weight: 'Peu importe',
-        }, feedbackList)
+        }
+        const recs = getRecommendations(scanWithProbs, fallbackContext, feedbackList)
         console.log('recommendations:', recs)
         setRecommendations(recs)
+
+        const frames = getTopFrames(
+          {
+            face_shape: scanWithProbs.face_shape,
+            ipd: scanWithProbs.ipd,
+            face_width: scanWithProbs.face_width,
+            ratio: scanWithProbs.ratio,
+            nose_width: scanWithProbs.nose_width,
+            ratio_cheek_jaw: scanWithProbs.ratio_cheek_jaw,
+            shape_probabilities: scanWithProbs.shape_probabilities,
+          },
+          fallbackContext,
+          6
+        )
+        setTopFrames(frames)
       }
     }
 
@@ -408,95 +432,107 @@ export default function ResultsPage() {
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">
             Montures recommandées
           </p>
+          {hasFeedback && (
+            <button
+              onClick={() => {
+                if (!scanData) return
+                const ctx = activeContext || {
+                  style: 'Classique', usage: 'Quotidien', correction: 'Vue',
+                  budget: '100-300€', material: 'Peu importe',
+                }
+                const updated = getTopFrames(
+                  {
+                    face_shape: scanData.face_shape,
+                    ipd: scanData.ipd,
+                    face_width: scanData.face_width,
+                    ratio: scanData.ratio,
+                    nose_width: scanData.nose_width,
+                    ratio_cheek_jaw: scanData.ratio_cheek_jaw,
+                    shape_probabilities: scanData.shape_probabilities,
+                  },
+                  ctx,
+                  6
+                )
+                  .map(frame => {
+                    let feedbackBonus = 0
+                    if (feedbacks[frame.style] === 'like') feedbackBonus += 15
+                    if (feedbacks[frame.style] === 'dislike') feedbackBonus -= 25
+                    feedbackList.forEach(fb => {
+                      const SIMILARITY: Record<string, Record<string, number>> = {
+                        'Rond': { 'Ovale fin': 0.8, 'Rond fin': 0.9 },
+                        'Rond fin': { 'Rond': 0.9, 'Ovale fin': 0.8 },
+                        'Rectangulaire': { 'Browline': 0.7, 'Wayfarer': 0.6 },
+                        'Cat-eye': { 'Oversized': 0.7, 'Géométrique': 0.6 },
+                        'Aviateur': { 'Ovale fin': 0.6, 'Wayfarer': 0.5 },
+                      }
+                      const similarity = SIMILARITY[fb.frame_style]?.[frame.style] || 0
+                      if (similarity > 0) {
+                        if (fb.signal_type === 'like') feedbackBonus += similarity * 10
+                        if (fb.signal_type === 'dislike') feedbackBonus -= similarity * 15
+                      }
+                    })
+                    return { ...frame, score: Math.min(98, Math.max(0, frame.score + feedbackBonus)) }
+                  })
+                  .sort((a, b) => b.score - a.score)
+                setTopFrames(updated)
+                setHasFeedback(false)
+              }}
+              className="w-full py-3 bg-[#0A2540] text-white rounded-xl font-medium text-sm mb-4"
+            >
+              Actualiser mes résultats
+            </button>
+          )}
           <div className="space-y-3">
-            {(orderedRecs.length > 0 ? orderedRecs : recommendations).map((rec) => (
-              <div
-                key={rec.name}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
-              >
-                {/* Illustration */}
-                <div className="w-full h-20 bg-gray-50 rounded-xl flex items-center justify-center mb-4">
-                  {framesvg(rec.name)}
-                </div>
-
-                {/* Name + score */}
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-bold text-[#0A2540]">{rec.name}</p>
-                  <span className="text-sm font-bold text-[#1E3A8A]">
-                    {rec.score}%
-                    {scoreChanges[rec.name] && (
-                      <span style={{
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: scoreChanges[rec.name] > 0 ? '#10B981' : '#EF4444',
-                        marginLeft: '6px',
-                        animation: 'fadeOut 2s forwards'
-                      }}>
-                        {scoreChanges[rec.name] > 0 ? `+${scoreChanges[rec.name]}` : scoreChanges[rec.name]}
-                      </span>
-                    )}
+            {topFrames.map((frame) => (
+              <div key={frame.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                <div className="bg-gray-50 p-8 flex items-center justify-center relative">
+                  <span className="absolute top-3 right-3 bg-[#1E3A8A] text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                    {frame.score}%
                   </span>
+                  {framesvg(frame.style)}
                 </div>
-
-                {/* Progress bar */}
-                <div className="w-full h-1.5 bg-gray-100 rounded-full mb-3">
-                  <div
-                    className="h-1.5 bg-[#1E3A8A] rounded-full transition-all"
-                    style={{ width: `${rec.score}%` }}
-                  />
-                </div>
-
-                {/* Description */}
-                <p className="text-xs text-gray-400 leading-relaxed mb-3">{rec.explanation}</p>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1.5">
-                  {rec.tags.map((tag: string) => (
-                    <span
-                      key={tag}
-                      className="text-[11px] font-medium border border-[#1E3A8A] text-[#1E3A8A] px-2.5 py-0.5 rounded-full"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                {session && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
-                    <button
-                      onClick={() => sendFeedback(rec.name, 'like')}
-                      style={{
-                        flex: 1,
-                        padding: '8px',
-                        borderRadius: '8px',
-                        border: '1px solid',
-                        borderColor: feedbacks[rec.name] === 'like' ? '#10B981' : '#E2E8F0',
-                        background: feedbacks[rec.name] === 'like' ? '#D1FAE5' : 'white',
-                        cursor: 'pointer',
-                        fontSize: '16px',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      👍
-                    </button>
-                    <button
-                      onClick={() => sendFeedback(rec.name, 'dislike')}
-                      style={{
-                        flex: 1,
-                        padding: '8px',
-                        borderRadius: '8px',
-                        border: '1px solid',
-                        borderColor: feedbacks[rec.name] === 'dislike' ? '#EF4444' : '#E2E8F0',
-                        background: feedbacks[rec.name] === 'dislike' ? '#FEE2E2' : 'white',
-                        cursor: 'pointer',
-                        fontSize: '16px',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      👎
-                    </button>
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-1">
+                    <div>
+                      <p className="text-xs text-gray-400 font-medium">{frame.brand}</p>
+                      <h3 className="font-bold text-[#0A2540]">{frame.model}</h3>
+                    </div>
                   </div>
-                )}
+                  <p className="text-xs text-gray-400 mb-2">{frame.material} · {frame.weight_grams}g · {frame.price_range}</p>
+                  <div className="w-full h-1.5 bg-gray-100 rounded-full mb-3">
+                    <div
+                      className="h-1.5 bg-[#1E3A8A] rounded-full"
+                      style={{ width: `${frame.score}%` }}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {frame.style_tags.slice(0, 3).map((tag: string) => (
+                      <span key={tag} className="text-[10px] border border-[#1E3A8A] text-[#1E3A8A] px-2 py-0.5 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  {session && (
+                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => sendFeedback(frame.style, 'like')}
+                        className="flex-1 py-2 rounded-lg border text-base transition-all"
+                        style={{
+                          borderColor: feedbacks[frame.style] === 'like' ? '#10B981' : '#E2E8F0',
+                          background: feedbacks[frame.style] === 'like' ? '#D1FAE5' : 'white'
+                        }}
+                      >👍</button>
+                      <button
+                        onClick={() => sendFeedback(frame.style, 'dislike')}
+                        className="flex-1 py-2 rounded-lg border text-base transition-all"
+                        style={{
+                          borderColor: feedbacks[frame.style] === 'dislike' ? '#EF4444' : '#E2E8F0',
+                          background: feedbacks[frame.style] === 'dislike' ? '#FEE2E2' : 'white'
+                        }}
+                      >👎</button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -539,7 +575,14 @@ export default function ResultsPage() {
             </>
           ) : (
             <button
-              onClick={() => router.push(`/opticians?contextId=${contextId || ''}`)}
+              onClick={() => {
+                const frameStyles = topFrames
+                  .slice(0, 3)
+                  .map(f => f.style)
+                  .filter((v, i, a) => a.indexOf(v) === i)
+                  .join(',')
+                router.push(`/opticians?contextId=${contextId || ''}&frames=${encodeURIComponent(frameStyles)}`)
+              }}
               className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
             >
               Trouver ces montures près de moi →

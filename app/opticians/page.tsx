@@ -11,56 +11,82 @@ import { getRecommendations } from '@/lib/recommendationEngine'
 
 const OPTICIANS = [
   {
-    id: 1,
-    name: 'Optique Lumière',
-    address: '12 rue de Rivoli, Paris 1er',
-    lat: 48.8603,
-    lng: 2.3477,
-    distance: '0.4 km',
-    rating: 4.8,
-    reviews: 124,
-    match: 'perfect',
-    inStock: true,
-    open: true,
-    openUntil: '19:00',
-    frames: ['Rectangular', 'Aviator', 'Round'],
-    phone: '+33 1 42 36 12 34',
+    id: 1, name: 'Optique Lumière', address: '12 rue de Rivoli, Paris 1er',
+    distance: 0.4, lat: 48.8566, lng: 2.3522,
+    rating: 4.8, reviews: 124, openUntil: '19:00', isOpen: true,
+    isPartner: true,
+    frames: ['Wayfarer', 'Aviateur', 'Rectangulaire', 'Browline', 'Rond', 'Rectangulaire fin']
   },
   {
-    id: 2,
-    name: 'Vision Plus Opticiens',
-    address: '45 avenue Montaigne, Paris 8e',
-    lat: 48.8661,
-    lng: 2.3044,
-    distance: '1.1 km',
-    rating: 4.5,
-    reviews: 89,
-    match: 'partial',
-    inStock: true,
-    open: true,
-    openUntil: '20:00',
-    frames: ['Aviator', 'Cat-eye'],
-    phone: '+33 1 47 23 56 78',
+    id: 2, name: 'Vision Plus Opticiens', address: '45 avenue Montaigne, Paris 8e',
+    distance: 1.1, lat: 48.8661, lng: 2.3044,
+    rating: 4.5, reviews: 89, openUntil: '20:00', isOpen: true,
+    isPartner: true,
+    frames: ['Cat-eye', 'Oversized', 'Géométrique', 'Aviateur', 'Rimless', 'Rectangulaire fin']
   },
   {
-    id: 3,
-    name: 'Atelier du Regard',
-    address: '8 rue des Martyrs, Paris 9e',
-    lat: 48.8798,
-    lng: 2.3450,
-    distance: '1.9 km',
-    rating: 4.2,
-    reviews: 56,
-    match: 'partial',
-    inStock: false,
-    open: false,
-    openUntil: '18:30',
-    frames: ['Round', 'Rectangular'],
-    phone: '+33 1 53 16 89 00',
+    id: 3, name: 'Atelier du Regard', address: '8 rue des Martyrs, Paris 9e',
+    distance: 1.9, lat: 48.8796, lng: 2.3380,
+    rating: 4.2, reviews: 56, openUntil: '18:30', isOpen: false,
+    isPartner: false,
+    frames: ['Rond', 'Ovale fin', 'Rond fin', 'Cat-eye', 'Wayfarer']
+  },
+  {
+    id: 4, name: 'Maison Lartigue', address: '14 rue de Bretagne, Paris 3e',
+    distance: 2.1, lat: 48.8627, lng: 2.3599,
+    rating: 4.9, reviews: 312, openUntil: '19:30', isOpen: true,
+    isPartner: true,
+    frames: ['Rectangulaire', 'Aviateur', 'Browline', 'Clubmaster', 'Wayfarer', 'Géométrique']
+  },
+  {
+    id: 5, name: 'Verre & Lumière', address: '22 rue Saint-Gilles, Paris 3e',
+    distance: 2.3, lat: 48.8579, lng: 2.3606,
+    rating: 4.6, reviews: 178, openUntil: '19:00', isOpen: true,
+    isPartner: false,
+    frames: ['Rimless', 'Rectangulaire fin', 'Ovale fin', 'Rond fin', 'Géométrique']
+  },
+  {
+    id: 6, name: 'Optic Saint-Germain', address: '34 rue de Rennes, Paris 6e',
+    distance: 2.8, lat: 48.8503, lng: 2.3286,
+    rating: 4.7, reviews: 203, openUntil: '20:00', isOpen: true,
+    isPartner: true,
+    frames: ['Cat-eye', 'Rond', 'Oversized', 'Aviateur', 'Rectangulaire', 'Browline']
+  },
+  {
+    id: 7, name: 'Les Lunettes du Marais', address: '5 rue des Francs-Bourgeois, Paris 4e',
+    distance: 3.1, lat: 48.8570, lng: 2.3555,
+    rating: 4.4, reviews: 91, openUntil: '19:00', isOpen: true,
+    isPartner: false,
+    frames: ['Wayfarer', 'Clubmaster', 'Browline', 'Rectangulaire', 'Rond']
+  },
+  {
+    id: 8, name: 'Optique Bastille', address: '18 boulevard Beaumarchais, Paris 11e',
+    distance: 3.5, lat: 48.8553, lng: 2.3671,
+    rating: 4.3, reviews: 67, openUntil: '19:30', isOpen: true,
+    isPartner: false,
+    frames: ['Rectangulaire', 'Aviateur', 'Cat-eye', 'Wayfarer', 'Géométrique', 'Oversized']
+  },
+  {
+    id: 9, name: 'Grand Optic Haussman', address: '64 boulevard Haussmann, Paris 9e',
+    distance: 1.4, lat: 48.8743, lng: 2.3295,
+    rating: 4.6, reviews: 445, openUntil: '20:30', isOpen: true,
+    isPartner: true,
+    frames: ['Rectangulaire', 'Rond', 'Aviateur', 'Cat-eye', 'Wayfarer', 'Browline', 'Rimless', 'Oversized', 'Géométrique', 'Clubmaster']
+  },
+  {
+    id: 10, name: 'Optic 2000 République', address: '2 place de la République, Paris 11e',
+    distance: 2.6, lat: 48.8674, lng: 2.3632,
+    rating: 4.1, reviews: 234, openUntil: '19:00', isOpen: true,
+    isPartner: false,
+    frames: ['Rectangulaire', 'Rond', 'Aviateur', 'Wayfarer', 'Cat-eye', 'Browline']
   },
 ]
 
-const FRAME_FILTERS = ['All', 'Rectangular', 'Aviator', 'Round', 'Cat-eye', 'Wayfarer', 'Browline', 'Geometric', 'Rimless', 'Oversized', 'Clubmaster']
+const FRAME_FILTERS = [
+  'All', 'Rectangulaire', 'Rectangulaire fin', 'Aviateur', 'Rond',
+  'Rond fin', 'Ovale fin', 'Cat-eye', 'Wayfarer', 'Géométrique',
+  'Rimless', 'Browline', 'Clubmaster', 'Oversized', 'Wrap'
+]
 
 type Optician = (typeof OPTICIANS)[number]
 
@@ -139,6 +165,7 @@ export default function OpticiansPage() {
   const router = useRouter()
   const params = useSearchParams()
   const contextIdFromUrl = params.get('contextId')
+  const framesFromUrl = params.get('frames')
   const { session } = useAuth()
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -147,6 +174,7 @@ export default function OpticiansPage() {
   const [activeContext, setActiveContext] = useState<any>(null)
   const [showContextDropdown, setShowContextDropdown] = useState(false)
   const [showBanner, setShowBanner] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
   const contextAppliedRef = useRef(false)
 
   console.log('contexts:', contexts)
@@ -186,6 +214,23 @@ export default function OpticiansPage() {
   }, [session])
 
   useEffect(() => {
+    if (!framesFromUrl) return
+    const englishToFrench: Record<string, string> = {
+      'Round': 'Rond', 'Oval': 'Ovale fin', 'Rectangular': 'Rectangulaire',
+      'Aviator': 'Aviateur', 'Geometric': 'Géométrique', 'Wayfarer': 'Wayfarer',
+      'Cat-eye': 'Cat-eye', 'Oversized': 'Oversized', 'Rimless': 'Rimless',
+      'Browline': 'Browline', 'Clubmaster': 'Clubmaster', 'Wrap': 'Wrap',
+    }
+    const frameList = framesFromUrl.split(',')
+      .map(f => decodeURIComponent(f.trim()))
+      .map(f => englishToFrench[f] || f)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .filter(f => FRAME_FILTERS.includes(f))
+    setActiveFilters(frameList)
+    setShowFilters(true)
+  }, [framesFromUrl])
+
+  useEffect(() => {
     contextAppliedRef.current = false
   }, [contextIdFromUrl])
 
@@ -200,23 +245,6 @@ export default function OpticiansPage() {
     console.log('Applying context from URL:', ctx.name)
     setActiveContext(ctx)
     setShowBanner(true)
-
-    const frameTranslation: Record<string, string> = {
-      'Rectangulaire': 'Rectangular',
-      'Rectangulaire fin': 'Rectangular',
-      'Aviateur': 'Aviator',
-      'Rond': 'Round',
-      'Rond fin': 'Round',
-      'Cat-eye': 'Cat-eye',
-      'Wayfarer': 'Wayfarer',
-      'Browline': 'Browline',
-      'Géométrique': 'Geometric',
-      'Rimless': 'Rimless',
-      'Oversized': 'Oversized',
-      'Clubmaster': 'Clubmaster',
-      'Ovale fin': 'Oval',
-      'Wrap': 'Wrap',
-    }
 
     supabase
       .from('scan')
@@ -236,11 +264,9 @@ export default function OpticiansPage() {
               : undefined,
           }
           const recs = getRecommendations(scanWithProbs, ctx)
-          console.log('recs:', recs.map(r => r.name))
           const frameNames = recs
-            .map(r => frameTranslation[r.name] || r.name)
+            .map(r => r.name)
             .filter((v, i, a) => a.indexOf(v) === i)
-          console.log('frameNames:', frameNames)
           setActiveFilters(frameNames)
         }
       })
@@ -280,30 +306,10 @@ export default function OpticiansPage() {
           ? JSON.parse(scanData.top_shapes)
           : undefined,
       }
-      const frameTranslation: Record<string, string> = {
-        'Rectangulaire': 'Rectangular',
-        'Rectangulaire fin': 'Rectangular',
-        'Aviateur': 'Aviator',
-        'Rond': 'Round',
-        'Rond fin': 'Round',
-        'Cat-eye': 'Cat-eye',
-        'Wayfarer': 'Wayfarer',
-        'Géométrique': 'Geometric',
-        'Rimless': 'Rimless',
-        'Oversized': 'Oversized',
-        'Browline': 'Browline',
-        'Clubmaster': 'Clubmaster',
-        'Ovale fin': 'Round',
-        'Wrap': 'Aviator',
-      }
-
       const recs = getRecommendations(scanWithProbs, newActive)
-      console.log('recs from engine:', recs)
-      console.log('noms avant traduction:', recs.map(r => r.name))
       const frameNames = recs
-        .map(r => frameTranslation[r.name] || r.name)
+        .map(r => r.name)
         .filter((v, i, a) => a.indexOf(v) === i)
-      console.log('frameNames after translation:', frameNames)
       setActiveFilters(frameNames)
     }
   }
@@ -311,11 +317,11 @@ export default function OpticiansPage() {
   const framesParam = params.get('frames')
   const scanFrames = framesParam ? framesParam.split(',') : []
 
-  const filteredOpticians = scanFrames.length > 0
-    ? OPTICIANS.filter((opt) => opt.frames.some((f) => scanFrames.some((sf) => sf.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(sf.toLowerCase()))))
-    : activeFilters.length === 0
-      ? OPTICIANS
-      : OPTICIANS.filter((opt) => opt.frames.some((f) => activeFilters.includes(f)))
+  const filteredOpticians = activeFilters.length === 0
+    ? OPTICIANS
+    : OPTICIANS.filter(opt =>
+        activeFilters.some(filter => opt.frames.includes(filter))
+      )
 
   const selected = OPTICIANS.find((o) => o.id === selectedId) ?? null
   const userType = (session ? 'user' : null) as 'user' | 'optician' | null
@@ -378,7 +384,7 @@ export default function OpticiansPage() {
                   Créer mon profil →
                 </button>
               ) : (
-                <div className="relative">
+                <div className="relative" style={{ position: 'relative', zIndex: 99999 }}>
                   <button
                     onClick={() => setShowContextDropdown(!showContextDropdown)}
                     className="flex items-center gap-1.5 px-3 py-2 bg-secondary-lighter border border-secondary-light text-secondary rounded-xl text-sm font-semibold hover:bg-secondary-light transition-colors"
@@ -397,10 +403,10 @@ export default function OpticiansPage() {
                       />
                       <div
                         style={{
-                          position: 'fixed',
-                          top: '60px',
-                          right: '16px',
-                          width: '220px',
+                          position: 'absolute',
+                          top: '100%',
+                          right: 0,
+                          width: '260px',
                           backgroundColor: 'white',
                           borderRadius: '12px',
                           boxShadow: '0 4px 24px rgba(10,37,64,0.15)',
@@ -504,10 +510,10 @@ export default function OpticiansPage() {
       )}
 
       {/* Split layout */}
-      <div className="flex flex-1 min-h-0">
+      <div style={{ display: 'flex', height: 'calc(100vh - 61px)', overflow: 'hidden' }}>
 
-        {/* Left panel */}
-        <div className="w-2/5 flex flex-col border-r border-border overflow-y-auto">
+        {/* Left panel — scroll indépendant */}
+        <div style={{ width: '40%', height: '100%', overflowY: 'auto', borderRight: '1px solid #E2E8F0' }}>
           <div className="px-5 pt-5 pb-4 space-y-4">
 
             {/* Search */}
@@ -518,29 +524,45 @@ export default function OpticiansPage() {
             />
 
             {/* Frame filters */}
-            <div className="flex flex-wrap gap-2">
-              {FRAME_FILTERS.map((f) => (
+            <div className="px-4 py-3 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">
+                  {activeFilters.length > 0
+                    ? `${activeFilters.length} filtre(s) actif(s) : ${activeFilters.join(', ')}`
+                    : 'Tous les opticiens'}
+                </p>
                 <button
-                  key={f}
-                  onClick={() => {
-                    if (f === 'All') { setActiveFilters([]); return }
-                    setActiveFilters(prev =>
-                      prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]
-                    )
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    f === 'All'
-                      ? activeFilters.length === 0
-                        ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-muted border-border hover:border-muted'
-                      : activeFilters.includes(f)
-                        ? 'bg-secondary text-white border-secondary'
-                        : 'bg-white text-muted border-border hover:border-muted'
-                  }`}
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-[#1E3A8A] border border-[#1E3A8A] px-3 py-1.5 rounded-full"
                 >
-                  {f}
+                  🔧 Filtres {showFilters ? '▲' : '▼'}
                 </button>
-              ))}
+              </div>
+
+              {showFilters && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {FRAME_FILTERS.map(f => (
+                    <button
+                      key={f}
+                      onClick={() => {
+                        if (f === 'All') { setActiveFilters([]); return }
+                        setActiveFilters(prev =>
+                          prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]
+                        )
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                        activeFilters.includes(f)
+                          ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                          : f === 'All' && activeFilters.length === 0
+                          ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-[#1E3A8A]'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Count */}
@@ -561,7 +583,7 @@ export default function OpticiansPage() {
               >
                 {/* Row 1 — dot + name + distance */}
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.match === 'perfect' ? 'bg-secondary' : 'bg-accent'}`} />
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activeFilters.length === 0 || opt.frames.some(f => activeFilters.includes(f)) ? 'bg-secondary' : 'bg-accent'}`} />
                   <p className="font-bold text-primary text-sm leading-tight flex-1 truncate">{opt.name}</p>
                   <span className="text-xs text-muted flex-shrink-0">{opt.distance}</span>
                 </div>
@@ -574,18 +596,18 @@ export default function OpticiansPage() {
                   <Stars rating={opt.rating} />
                   <span className="text-xs text-muted">{opt.rating} ({opt.reviews})</span>
                   <span className={`ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-pill flex-shrink-0 ${
-                    opt.match === 'perfect'
+                    activeFilters.length === 0 || opt.frames.some(f => activeFilters.includes(f))
                       ? 'bg-secondary-light text-secondary'
                       : 'bg-accent-light text-accent-dark'
                   }`}>
-                    {opt.match === 'perfect' ? 'Perfect match' : 'Partial match'}
+                    {activeFilters.length === 0 || opt.frames.some(f => activeFilters.includes(f)) ? 'Perfect match' : 'Partial match'}
                   </span>
                 </div>
 
                 {/* Row 4 — open status + view store */}
                 <div className="flex items-center justify-between pl-4">
-                  <span className={`text-[10px] font-medium ${opt.open ? 'text-success' : 'text-red-400'}`}>
-                    {opt.open ? `Open · until ${opt.openUntil}` : `Closed · opens 9:00`}
+                  <span className={`text-[10px] font-medium ${opt.isOpen ? 'text-success' : 'text-red-400'}`}>
+                    {opt.isOpen ? `Open · until ${opt.openUntil}` : `Closed · opens 9:00`}
                   </span>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleOpticianClick(opt.id) }}
@@ -599,11 +621,11 @@ export default function OpticiansPage() {
           </div>
         </div>
 
-        {/* Right panel — map or detail */}
-        <div className="flex-1 relative" style={{ position: 'relative', zIndex: 1 }}>
+        {/* Right panel — map fixe */}
+        <div style={{ flex: 1, height: '100%', position: 'relative' }}>
 
           {/* Leaflet map — always visible */}
-          <div className="absolute inset-0">
+          <div style={{ height: '100%', width: '100%', position: 'relative', zIndex: 1 }}>
             <LeafletMap opticians={OPTICIANS} onMarkerClick={handleOpticianClick} />
           </div>
 
@@ -656,8 +678,6 @@ export default function OpticiansPage() {
                   </div>
                 ))}
               </div>
-
-              <p className="text-sm" style={{ color: '#0A2540', marginBottom: '24px' }}>{selected.phone}</p>
 
               <button style={{ width: '100%', background: '#1E3A8A', color: 'white', padding: '14px', borderRadius: '12px', fontWeight: '600', marginBottom: '8px', border: 'none', cursor: 'pointer' }}>
                 Reserve a fitting
