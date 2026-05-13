@@ -117,6 +117,12 @@ export default function ResultsPage() {
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [activeContext, setActiveContext] = useState<any>(null)
   const [hasContext, setHasContext] = useState(false)
+  const [feedbacks, setFeedbacks] = useState<Record<string, string>>({})
+  const [feedbackList, setFeedbackList] = useState<any[]>([])
+  const [scanData, setScanData] = useState<any>(null)
+  const [orderedRecs, setOrderedRecs] = useState<any[]>([])
+  const [scoreChanges, setScoreChanges] = useState<Record<string, number>>({})
+  const [feedbackToast, setFeedbackToast] = useState<{ message: string, type: 'like' | 'dislike' } | null>(null)
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -127,6 +133,89 @@ export default function ResultsPage() {
       .limit(1)
       .then(({ data }) => setHasContext(!!data && data.length > 0))
   }, [session])
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    fetch(`/api/feedback?user_id=${session.user.id}`)
+      .then(r => r.json())
+      .then(({ feedbacks: data }) => {
+        const map: Record<string, string> = {}
+        data?.forEach((f: any) => { map[f.frame_style] = f.signal_type })
+        setFeedbacks(map)
+        setFeedbackList(data || [])
+      })
+  }, [session])
+
+  // Initialise l'ordre une seule fois
+  useEffect(() => {
+    if (recommendations.length > 0 && orderedRecs.length === 0) {
+      setOrderedRecs(recommendations)
+    }
+  }, [recommendations])
+
+  // Après feedback, update scores sans changer l'ordre
+  useEffect(() => {
+    if (recommendations.length > 0 && orderedRecs.length > 0) {
+      setOrderedRecs(prev => prev.map(rec => {
+        const updated = recommendations.find(r => r.name === rec.name)
+        return updated || rec
+      }))
+    }
+  }, [recommendations])
+
+  const sendFeedback = async (frameName: string, signalType: 'like' | 'dislike') => {
+    if (!session?.user?.id) return
+
+    const oldScores: Record<string, number> = {}
+    orderedRecs.forEach(r => { oldScores[r.name] = r.score })
+
+    setFeedbacks(prev => ({ ...prev, [frameName]: signalType }))
+
+    const newFeedback = {
+      frame_style: frameName,
+      signal_type: signalType,
+      weight: signalType === 'like' ? 2.0 : -2.0,
+      created_at: new Date().toISOString()
+    }
+
+    const updatedList = [
+      ...feedbackList.filter(f => f.frame_style !== frameName),
+      newFeedback
+    ]
+    setFeedbackList(updatedList)
+
+    if (scanData && activeContext) {
+      const recs = getRecommendations(scanData, activeContext, updatedList)
+      setRecommendations(recs)
+
+      const changes: Record<string, number> = {}
+      recs.forEach(r => {
+        const diff = r.score - (oldScores[r.name] || r.score)
+        if (Math.abs(diff) > 1) changes[r.name] = Math.round(diff)
+      })
+      setScoreChanges(changes)
+      setTimeout(() => setScoreChanges({}), 2000)
+    }
+
+    setFeedbackToast({
+      message: signalType === 'like'
+        ? 'Préférence enregistrée — tes prochains résultats seront affinés ✓'
+        : 'Compris — on va proposer autre chose ✓',
+      type: signalType
+    })
+    setTimeout(() => setFeedbackToast(null), 2500)
+
+    await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: session.user.id,
+        frame_style: frameName,
+        signal_type: signalType,
+        context_id: contextId || null,
+      })
+    })
+  }
 
   const from = params.get('from')
   const contextId = params.get('contextId')
@@ -172,18 +261,20 @@ export default function ResultsPage() {
 
       if (contextData) setActiveContext(contextData)
 
-      const scanWithProbs = scanData ? {
-        ...scanData,
-        shape_probabilities: scanData.shape_probabilities
-          ? JSON.parse(scanData.shape_probabilities)
+      const scanWithProbs = scanArray?.[0] ? {
+        ...scanArray[0],
+        shape_probabilities: scanArray[0].shape_probabilities
+          ? JSON.parse(scanArray[0].shape_probabilities)
           : undefined,
-        top_shapes: scanData.top_shapes
-          ? JSON.parse(scanData.top_shapes)
+        top_shapes: scanArray[0].top_shapes
+          ? JSON.parse(scanArray[0].top_shapes)
           : undefined,
       } : null
 
+      if (scanWithProbs) setScanData(scanWithProbs)
+
       if (scanWithProbs && contextData) {
-        const recs = getRecommendations(scanWithProbs, contextData)
+        const recs = getRecommendations(scanWithProbs, contextData, feedbackList)
         console.log('recommendations:', recs)
         setRecommendations(recs)
       } else if (scanWithProbs) {
@@ -196,7 +287,7 @@ export default function ResultsPage() {
           colors: 'Neutres',
           personality: 'Discret',
           frame_weight: 'Peu importe',
-        })
+        }, feedbackList)
         console.log('recommendations:', recs)
         setRecommendations(recs)
       }
@@ -313,11 +404,12 @@ export default function ResultsPage() {
 
         {/* Section 3 — Montures recommandées */}
         <div>
+          <style>{`@keyframes fadeOut { 0% { opacity: 1; transform: translateY(0); } 70% { opacity: 1; transform: translateY(-4px); } 100% { opacity: 0; transform: translateY(-8px); } }`}</style>
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">
             Montures recommandées
           </p>
           <div className="space-y-3">
-            {recommendations.map((rec) => (
+            {(orderedRecs.length > 0 ? orderedRecs : recommendations).map((rec) => (
               <div
                 key={rec.name}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
@@ -330,7 +422,20 @@ export default function ResultsPage() {
                 {/* Name + score */}
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-bold text-[#0A2540]">{rec.name}</p>
-                  <span className="text-sm font-bold text-[#1E3A8A]">{rec.score}%</span>
+                  <span className="text-sm font-bold text-[#1E3A8A]">
+                    {rec.score}%
+                    {scoreChanges[rec.name] && (
+                      <span style={{
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: scoreChanges[rec.name] > 0 ? '#10B981' : '#EF4444',
+                        marginLeft: '6px',
+                        animation: 'fadeOut 2s forwards'
+                      }}>
+                        {scoreChanges[rec.name] > 0 ? `+${scoreChanges[rec.name]}` : scoreChanges[rec.name]}
+                      </span>
+                    )}
+                  </span>
                 </div>
 
                 {/* Progress bar */}
@@ -355,6 +460,43 @@ export default function ResultsPage() {
                     </span>
                   ))}
                 </div>
+
+                {session && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
+                    <button
+                      onClick={() => sendFeedback(rec.name, 'like')}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: '8px',
+                        border: '1px solid',
+                        borderColor: feedbacks[rec.name] === 'like' ? '#10B981' : '#E2E8F0',
+                        background: feedbacks[rec.name] === 'like' ? '#D1FAE5' : 'white',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      👍
+                    </button>
+                    <button
+                      onClick={() => sendFeedback(rec.name, 'dislike')}
+                      style={{
+                        flex: 1,
+                        padding: '8px',
+                        borderRadius: '8px',
+                        border: '1px solid',
+                        borderColor: feedbacks[rec.name] === 'dislike' ? '#EF4444' : '#E2E8F0',
+                        background: feedbacks[rec.name] === 'dislike' ? '#FEE2E2' : 'white',
+                        cursor: 'pointer',
+                        fontSize: '16px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      👎
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -405,6 +547,27 @@ export default function ResultsPage() {
           )}
         </div>
       </div>
+
+      {/* Toast feedback */}
+      {feedbackToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '84px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: feedbackToast.type === 'like' ? '#10B981' : '#F97316',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '100px',
+          fontSize: '13px',
+          fontWeight: '600',
+          zIndex: 9999,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          whiteSpace: 'nowrap'
+        }}>
+          {feedbackToast.message}
+        </div>
+      )}
 
       {/* Toast */}
       <div

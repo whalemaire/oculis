@@ -30,6 +30,13 @@ export type FaceScan = {
   top_shapes?: { shape: string, probability: number }[]
 }
 
+export type UserFeedback = {
+  frame_style: string
+  signal_type: string
+  weight: number
+  created_at: string
+}
+
 export type FrameRecommendation = {
   name: string
   score: number
@@ -38,6 +45,32 @@ export type FrameRecommendation = {
   frameType: string
 }
 
+
+const FRAME_SIMILARITY: Record<string, Record<string, number>> = {
+  'Rectangulaire':     { 'Browline': 0.7, 'Wayfarer': 0.6, 'Clubmaster': 0.5, 'Rectangulaire fin': 0.8 },
+  'Rectangulaire fin': { 'Rimless': 0.8, 'Rectangulaire': 0.8, 'Géométrique': 0.6 },
+  'Rond':              { 'Ovale fin': 0.8, 'Rond fin': 0.9, 'Aviateur': 0.5 },
+  'Rond fin':          { 'Rond': 0.9, 'Ovale fin': 0.8, 'Rimless': 0.7 },
+  'Ovale fin':         { 'Rond': 0.8, 'Rond fin': 0.8, 'Aviateur': 0.6 },
+  'Aviateur':          { 'Ovale fin': 0.6, 'Wayfarer': 0.5, 'Rond': 0.5 },
+  'Cat-eye':           { 'Oversized': 0.7, 'Géométrique': 0.6, 'Browline': 0.4 },
+  'Oversized':         { 'Cat-eye': 0.7, 'Wayfarer': 0.6, 'Clubmaster': 0.5 },
+  'Wayfarer':          { 'Rectangulaire': 0.6, 'Clubmaster': 0.7, 'Oversized': 0.6 },
+  'Géométrique':       { 'Rectangulaire fin': 0.6, 'Cat-eye': 0.6, 'Rimless': 0.5 },
+  'Rimless':           { 'Rectangulaire fin': 0.8, 'Rond fin': 0.7, 'Géométrique': 0.5 },
+  'Browline':          { 'Rectangulaire': 0.7, 'Clubmaster': 0.8, 'Wayfarer': 0.5 },
+  'Clubmaster':        { 'Browline': 0.8, 'Wayfarer': 0.7, 'Oversized': 0.5 },
+  'Wrap':              { 'Oversized': 0.4, 'Aviateur': 0.4 },
+}
+
+const getDecayFactor = (createdAt: string): number => {
+  const days = (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24)
+  if (days < 7)   return 1.0
+  if (days < 30)  return 0.8
+  if (days < 90)  return 0.6
+  if (days < 180) return 0.4
+  return 0.2
+}
 
 const STYLE_FRAMES: Record<string, string[]> = {
   'Classique':   ['Rectangulaire', 'Browline', 'Aviateur', 'Wayfarer'],
@@ -85,7 +118,8 @@ const EXPLANATIONS: Record<string, string> = {
 
 export function getRecommendations(
   scan: FaceScan,
-  context: Context
+  context: Context,
+  feedbacks: UserFeedback[] = []
 ): FrameRecommendation[] {
   const scores: Record<string, number> = {}
 
@@ -442,6 +476,34 @@ export function getRecommendations(
     const safeFrames = ['Rectangulaire', 'Wayfarer', 'Aviateur']
     safeFrames.forEach(frame => {
       if (scores[frame] !== undefined) scores[frame] += 10
+    })
+  }
+
+  // NIVEAU 3 — Feedback utilisateur (15%)
+  if (feedbacks.length > 0) {
+    const feedbackBonus: Record<string, number> = {}
+    ALL_FRAMES.forEach(frame => { feedbackBonus[frame] = 0 })
+
+    feedbacks.forEach(fb => {
+      const decay = getDecayFactor(fb.created_at)
+      const effectiveWeight = fb.weight * decay
+
+      if (feedbackBonus[fb.frame_style] !== undefined) {
+        feedbackBonus[fb.frame_style] += effectiveWeight * 10
+      }
+
+      const similarities = FRAME_SIMILARITY[fb.frame_style] || {}
+      Object.entries(similarities).forEach(([similarFrame, similarity]) => {
+        if (feedbackBonus[similarFrame] !== undefined) {
+          feedbackBonus[similarFrame] += effectiveWeight * similarity * 6
+        }
+      })
+    })
+
+    const maxBonus = Math.max(...Object.values(feedbackBonus).map(Math.abs), 1)
+    ALL_FRAMES.forEach(frame => {
+      const normalized = (feedbackBonus[frame] / maxBonus) * 15
+      scores[frame] = (scores[frame] || 0) + normalized
     })
   }
 
