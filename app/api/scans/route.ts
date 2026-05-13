@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 export async function POST(request: Request) {
   const {
     user_id, face_shape, confidence, gender, age,
-    measurements, ratios
+    measurements, ratios, shape_probabilities, top_shapes
   } = await request.json()
 
   console.log('body reçu:', { user_id, face_shape, confidence, measurements, ratios })
@@ -41,6 +41,8 @@ export async function POST(request: Request) {
     ratio_nose_face:   ratios?.noseFace,
     ratio_eye_spacing: ratios?.eyeSpacing,
     ratio_symmetry:    ratios?.symmetry,
+    shape_probabilities: shape_probabilities ? JSON.stringify(shape_probabilities) : null,
+    top_shapes:          top_shapes ? JSON.stringify(top_shapes) : null,
   }
 
   console.log('Saving scan:', { user_id, face_shape, existing: existing?.length })

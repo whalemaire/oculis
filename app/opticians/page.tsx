@@ -226,7 +226,16 @@ export default function OpticiansPage() {
       .then(({ data }) => {
         const scanData = data?.[0]
         if (scanData) {
-          const recs = getRecommendations(scanData, ctx)
+          const scanWithProbs = {
+            ...scanData,
+            shape_probabilities: scanData.shape_probabilities
+              ? JSON.parse(scanData.shape_probabilities)
+              : undefined,
+            top_shapes: scanData.top_shapes
+              ? JSON.parse(scanData.top_shapes)
+              : undefined,
+          }
+          const recs = getRecommendations(scanWithProbs, ctx)
           console.log('recs:', recs.map(r => r.name))
           const frameNames = recs
             .map(r => frameTranslation[r.name] || r.name)
@@ -262,6 +271,15 @@ export default function OpticiansPage() {
     const scanData = scanArray?.[0]
 
     if (scanData && newActive) {
+      const scanWithProbs = {
+        ...scanData,
+        shape_probabilities: scanData.shape_probabilities
+          ? JSON.parse(scanData.shape_probabilities)
+          : undefined,
+        top_shapes: scanData.top_shapes
+          ? JSON.parse(scanData.top_shapes)
+          : undefined,
+      }
       const frameTranslation: Record<string, string> = {
         'Rectangulaire': 'Rectangular',
         'Rectangulaire fin': 'Rectangular',
@@ -279,7 +297,7 @@ export default function OpticiansPage() {
         'Wrap': 'Aviator',
       }
 
-      const recs = getRecommendations(scanData, newActive)
+      const recs = getRecommendations(scanWithProbs, newActive)
       console.log('recs from engine:', recs)
       console.log('noms avant traduction:', recs.map(r => r.name))
       const frameNames = recs

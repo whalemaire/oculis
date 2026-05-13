@@ -21,10 +21,13 @@ export type FaceScan = {
   jaw_width?: number
   cheek_width?: number
   nose_width?: number
+  chin_height?: number
   ratio_jaw_forehead?: number
   ratio_cheek_jaw?: number
   ratio_eye_spacing?: number
   ratio_symmetry?: number
+  shape_probabilities?: Record<string, number>
+  top_shapes?: { shape: string, probability: number }[]
 }
 
 export type FrameRecommendation = {
@@ -35,13 +38,6 @@ export type FrameRecommendation = {
   frameType: string
 }
 
-const FRAME_SHAPES: Record<string, string[]> = {
-  oval:    ['Rectangulaire', 'Aviateur', 'Cat-eye', 'Wayfarer', 'Rond'],
-  round:   ['Rectangulaire', 'Wayfarer', 'Cat-eye', 'Géométrique', 'Browline'],
-  square:  ['Rond', 'Ovale', 'Aviateur', 'Cat-eye', 'Rimless'],
-  heart:   ['Aviateur', 'Rond', 'Rimless', 'Rectangulaire fin', 'Browline'],
-  oblong:  ['Wayfarer', 'Rond', 'Cat-eye', 'Oversized', 'Clubmaster'],
-}
 
 const STYLE_FRAMES: Record<string, string[]> = {
   'Classique':   ['Rectangulaire', 'Browline', 'Aviateur', 'Wayfarer'],
@@ -93,12 +89,78 @@ export function getRecommendations(
 ): FrameRecommendation[] {
   const scores: Record<string, number> = {}
 
-  ALL_FRAMES.forEach(frame => { scores[frame] = 0 })
+  // === DIMENSION 1 : Morphologie (35%) ===
+  const shapeCompatibility: Record<string, Record<string, number>> = {
+    oval:   { 'Rectangulaire': 95, 'Aviateur': 90, 'Cat-eye': 88, 'Wayfarer': 85, 'Rond': 80, 'Géométrique': 82, 'Browline': 78, 'Clubmaster': 75, 'Rimless': 70, 'Oversized': 72, 'Rectangulaire fin': 85, 'Ovale fin': 75, 'Rond fin': 72, 'Wrap': 60 },
+    round:  { 'Rectangulaire': 95, 'Wayfarer': 90, 'Cat-eye': 85, 'Géométrique': 88, 'Browline': 82, 'Clubmaster': 78, 'Aviateur': 70, 'Rimless': 65, 'Oversized': 60, 'Rectangulaire fin': 88, 'Rond': 40, 'Ovale fin': 45, 'Rond fin': 38, 'Wrap': 55 },
+    square: { 'Rond': 95, 'Ovale fin': 92, 'Cat-eye': 88, 'Aviateur': 85, 'Rimless': 82, 'Rond fin': 90, 'Rectangulaire': 60, 'Wayfarer': 65, 'Géométrique': 70, 'Browline': 68, 'Clubmaster': 65, 'Oversized': 60, 'Rectangulaire fin': 55, 'Wrap': 50 },
+    heart:  { 'Aviateur': 95, 'Rond': 90, 'Rimless': 88, 'Ovale fin': 85, 'Rectangulaire fin': 82, 'Cat-eye': 70, 'Wayfarer': 72, 'Géométrique': 68, 'Rectangulaire': 65, 'Browline': 62, 'Clubmaster': 60, 'Oversized': 55, 'Rond fin': 85, 'Wrap': 50 },
+    oblong: { 'Wayfarer': 95, 'Oversized': 90, 'Rond': 88, 'Cat-eye': 85, 'Clubmaster': 82, 'Browline': 80, 'Rectangulaire': 60, 'Aviateur': 65, 'Géométrique': 70, 'Rimless': 55, 'Rectangulaire fin': 50, 'Ovale fin': 72, 'Rond fin': 85, 'Wrap': 60 },
+  }
 
-  // Forme du visage — 35%
-  const shapeFrames = FRAME_SHAPES[scan.face_shape] || FRAME_SHAPES['oval']
-  shapeFrames.forEach((frame, index) => {
-    scores[frame] = (scores[frame] || 0) + (35 - index * 5)
+  const morphScores: Record<string, number> = {}
+  ALL_FRAMES.forEach(frame => {
+    let morphScore = 0
+    if (scan.shape_probabilities) {
+      Object.entries(scan.shape_probabilities).forEach(([shape, prob]) => {
+        const compat = shapeCompatibility[shape]?.[frame] || 60
+        morphScore += (compat * prob) / 100
+      })
+    } else {
+      morphScore = shapeCompatibility[scan.face_shape]?.[frame] || 60
+    }
+    morphScores[frame] = morphScore * 0.35
+  })
+
+  // === DIMENSION 2 : Fitting physique (20%) ===
+  const fittingScores: Record<string, number> = {}
+  ALL_FRAMES.forEach(frame => {
+    let fittingScore = 70
+
+    if (scan.ipd) {
+      if (scan.ipd < 100) {
+        if (['Rimless', 'Rectangulaire fin', 'Rond fin'].includes(frame)) fittingScore += 15
+        if (['Oversized', 'Wayfarer'].includes(frame)) fittingScore -= 15
+      } else if (scan.ipd > 130) {
+        if (['Wayfarer', 'Oversized', 'Browline'].includes(frame)) fittingScore += 15
+        if (['Rimless', 'Rectangulaire fin'].includes(frame)) fittingScore -= 10
+      }
+    }
+
+    if (scan.ratio) {
+      if (scan.ratio > 1.30) {
+        if (['Cat-eye', 'Oversized'].includes(frame)) fittingScore -= 8
+        if (['Wayfarer', 'Rectangulaire'].includes(frame)) fittingScore += 8
+      } else if (scan.ratio < 1.05) {
+        if (['Cat-eye', 'Browline'].includes(frame)) fittingScore += 10
+      }
+    }
+
+    if (scan.nose_width && scan.face_width) {
+      const noseRatio = scan.nose_width / scan.face_width
+      if (noseRatio > 0.38) {
+        if (['Rimless', 'Rectangulaire fin'].includes(frame)) fittingScore -= 12
+        if (['Wayfarer', 'Oversized'].includes(frame)) fittingScore += 8
+      } else if (noseRatio < 0.28) {
+        if (['Rimless', 'Aviateur'].includes(frame)) fittingScore += 10
+      }
+    }
+
+    if (scan.ratio_cheek_jaw) {
+      if (scan.ratio_cheek_jaw < 0.85) {
+        if (['Rond', 'Ovale fin', 'Rond fin'].includes(frame)) fittingScore += 12
+        if (['Rectangulaire', 'Wayfarer'].includes(frame)) fittingScore -= 8
+      } else if (scan.ratio_cheek_jaw > 1.10) {
+        if (['Rectangulaire fin', 'Aviateur', 'Géométrique'].includes(frame)) fittingScore += 10
+      }
+    }
+
+    fittingScores[frame] = Math.min(100, Math.max(0, fittingScore)) * 0.20
+  })
+
+  // Score de base = morphologie + fitting physique
+  ALL_FRAMES.forEach(frame => {
+    scores[frame] = (morphScores[frame] || 0) + (fittingScores[frame] || 0)
   })
 
   // Style — fallback niveau 1

@@ -172,12 +172,22 @@ export default function ResultsPage() {
 
       if (contextData) setActiveContext(contextData)
 
-      if (scanData && contextData) {
-        const recs = getRecommendations(scanData, contextData)
+      const scanWithProbs = scanData ? {
+        ...scanData,
+        shape_probabilities: scanData.shape_probabilities
+          ? JSON.parse(scanData.shape_probabilities)
+          : undefined,
+        top_shapes: scanData.top_shapes
+          ? JSON.parse(scanData.top_shapes)
+          : undefined,
+      } : null
+
+      if (scanWithProbs && contextData) {
+        const recs = getRecommendations(scanWithProbs, contextData)
         console.log('recommendations:', recs)
         setRecommendations(recs)
-      } else if (scanData) {
-        const recs = getRecommendations(scanData, {
+      } else if (scanWithProbs) {
+        const recs = getRecommendations(scanWithProbs, {
           style: 'Classique',
           usage: 'Quotidien',
           correction: 'Vue',

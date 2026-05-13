@@ -71,6 +71,11 @@ export default function ScanPage() {
         body: JSON.stringify({ imageBase64: base64 }),
       })
       const data = await res.json()
+      console.log('analyze response:', JSON.stringify({
+        faceShape: data.faceShape,
+        shapeProbabilities: data.shapeProbabilities,
+        topShapes: data.topShapes,
+      }))
 
       if (!res.ok) {
         if (data.error === 'no_face') {
@@ -85,6 +90,10 @@ export default function ScanPage() {
       streamRef.current?.getTracks().forEach((t) => t.stop())
 
       if (session?.user?.id) {
+        console.log('Sending to /api/scans:', {
+          shape_probabilities: data.shapeProbabilities,
+          top_shapes: data.topShapes,
+        })
         const scanResponse = await fetch('/api/scans', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -96,6 +105,8 @@ export default function ScanPage() {
             age: data.age,
             measurements: data.measurements,
             ratios: data.ratios,
+            shape_probabilities: data.shapeProbabilities,
+            top_shapes: data.topShapes,
           }),
         })
         const scanResult = await scanResponse.json()
