@@ -209,6 +209,8 @@ export default function NewContextPage() {
         }),
       })
       const newContext = await res.json()
+      console.log('API contexts response:', newContext)
+      console.log('newContext.id:', newContext?.context?.id)
 
       const { data: scanArray } = await supabase
         .from('scan')
@@ -218,10 +220,11 @@ export default function NewContextPage() {
 
       const scan = scanArray?.[0]
 
+      const contextId = newContext.context?.id || newContext.id
       if (scan) {
-        router.push(`/results?contextId=${newContext.id}&shape=${scan.face_shape}&confidence=${scan.confidence}&ipd=${scan.ipd}&ratio=${scan.ratio}&gender=${scan.gender || 'Male'}&from=context`)
+        router.push(`/results?contextId=${contextId}&shape=${scan.face_shape}&confidence=${scan.confidence}&ipd=${scan.ipd}&ratio=${scan.ratio}&gender=${scan.gender || 'Male'}&from=context`)
       } else {
-        router.push(`/opticians?contextId=${newContext.id}`)
+        router.push(`/opticians?contextId=${contextId}`)
       }
     } catch {
       router.push('/opticians')

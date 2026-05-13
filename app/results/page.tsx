@@ -114,6 +114,13 @@ export default function ResultsPage() {
   const router = useRouter()
   const params = useSearchParams()
   const { session } = useAuth()
+
+  console.log('URL params:', {
+    contextId: params.get('contextId'),
+    shape: params.get('shape'),
+    from: params.get('from'),
+    fullUrl: typeof window !== 'undefined' ? window.location.href : 'SSR'
+  })
   const [showToast, setShowToast] = useState(false)
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [activeContext, setActiveContext] = useState<any>(null)
@@ -234,91 +241,74 @@ export default function ResultsPage() {
   useEffect(() => {
     if (!session?.user?.id) return
 
-    const loadRecommendations = async () => {
-      const { data: contextData } = contextId
-        ? await supabase.from('context').select('*').eq('id', contextId).single()
-        : await supabase.from('context').select('*').eq('user_id', session.user.id).eq('is_active', true).single()
-
+    const loadData = async () => {
       const { data: scanArray } = await supabase
         .from('scan')
         .select('*')
         .eq('user_id', session.user.id)
         .limit(1)
+      const scan = scanArray?.[0]
 
-      const scanData = scanArray?.[0] || null
-      console.log('scanData corrigé:', scanData)
-
-      console.log('session:', session?.user?.id)
-      console.log('contextData:', contextData)
-      console.log('scanData:', scanData)
-
-      if (contextData) setActiveContext(contextData)
-
-      const scanWithProbs = scanArray?.[0] ? {
-        ...scanArray[0],
-        shape_probabilities: scanArray[0].shape_probabilities
-          ? JSON.parse(scanArray[0].shape_probabilities)
-          : undefined,
-        top_shapes: scanArray[0].top_shapes
-          ? JSON.parse(scanArray[0].top_shapes)
-          : undefined,
-      } : null
-
-      if (scanWithProbs) setScanData(scanWithProbs)
-
-      if (scanWithProbs && contextData) {
-        const recs = getRecommendations(scanWithProbs, contextData, feedbackList)
-        console.log('recommendations:', recs)
-        setRecommendations(recs)
-
-        const frames = getTopFrames(
-          {
-            face_shape: scanWithProbs.face_shape,
-            ipd: scanWithProbs.ipd,
-            face_width: scanWithProbs.face_width,
-            ratio: scanWithProbs.ratio,
-            nose_width: scanWithProbs.nose_width,
-            ratio_cheek_jaw: scanWithProbs.ratio_cheek_jaw,
-            shape_probabilities: scanWithProbs.shape_probabilities,
-          },
-          contextData,
-          6
-        )
-        setTopFrames(frames)
-      } else if (scanWithProbs) {
-        const fallbackContext = {
-          style: 'Classique',
-          usage: 'Quotidien',
-          correction: 'Vue',
-          budget: '100-300€',
-          material: 'Peu importe',
-          colors: 'Neutres',
-          personality: 'Discret',
-          frame_weight: 'Peu importe',
-        }
-        const recs = getRecommendations(scanWithProbs, fallbackContext, feedbackList)
-        console.log('recommendations:', recs)
-        setRecommendations(recs)
-
-        const frames = getTopFrames(
-          {
-            face_shape: scanWithProbs.face_shape,
-            ipd: scanWithProbs.ipd,
-            face_width: scanWithProbs.face_width,
-            ratio: scanWithProbs.ratio,
-            nose_width: scanWithProbs.nose_width,
-            ratio_cheek_jaw: scanWithProbs.ratio_cheek_jaw,
-            shape_probabilities: scanWithProbs.shape_probabilities,
-          },
-          fallbackContext,
-          6
-        )
-        setTopFrames(frames)
+      let context = null
+      if (contextId) {
+        const { data } = await supabase
+          .from('context')
+          .select('*')
+          .eq('id', contextId)
+          .single()
+        context = data
+      } else {
+        const { data } = await supabase
+          .from('context')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('is_active', true)
+          .limit(1)
+        context = data?.[0]
       }
+
+      console.log('Loading results with context:', context?.name, 'contextId from URL:', contextId)
+
+      if (scan) {
+        const scanWithProbs = {
+          ...scan,
+          shape_probabilities: scan.shape_probabilities
+            ? JSON.parse(scan.shape_probabilities)
+            : undefined,
+          top_shapes: scan.top_shapes
+            ? JSON.parse(scan.top_shapes)
+            : undefined,
+        }
+        const frames = getTopFrames(
+          {
+            face_shape: scanWithProbs.face_shape,
+            ipd: scanWithProbs.ipd,
+            face_width: scanWithProbs.face_width,
+            ratio: scanWithProbs.ratio,
+            nose_width: scanWithProbs.nose_width,
+            ratio_cheek_jaw: scanWithProbs.ratio_cheek_jaw,
+            shape_probabilities: scanWithProbs.shape_probabilities,
+            gender: scanWithProbs.gender,
+            age: scanWithProbs.age,
+            chin_height: scanWithProbs.chin_height,
+            forehead_width: scanWithProbs.forehead_width,
+            nose_length: scanWithProbs.nose_length,
+            face_height: scanWithProbs.face_height,
+          },
+          context || {},
+          6
+        )
+        setTopFrames(frames)
+        setScanData(scanWithProbs)
+
+        const recs = getRecommendations(scanWithProbs, context || {}, feedbackList)
+        setRecommendations(recs)
+      }
+      if (context) setActiveContext(context)
     }
 
-    loadRecommendations()
-  }, [session])
+    loadData()
+  }, [session, contextId])
 
   useEffect(() => {
     if (from === 'profile') return
@@ -449,6 +439,12 @@ export default function ResultsPage() {
                     nose_width: scanData.nose_width,
                     ratio_cheek_jaw: scanData.ratio_cheek_jaw,
                     shape_probabilities: scanData.shape_probabilities,
+                    gender: scanData.gender,
+                    age: scanData.age,
+                    chin_height: scanData.chin_height,
+                    forehead_width: scanData.forehead_width,
+                    nose_length: scanData.nose_length,
+                    face_height: scanData.face_height,
                   },
                   ctx,
                   6

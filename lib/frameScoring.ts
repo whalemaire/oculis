@@ -8,6 +8,12 @@ type ScanData = {
   nose_width?: number
   ratio_cheek_jaw?: number
   shape_probabilities?: Record<string, number>
+  gender?: string
+  age?: number
+  chin_height?: number
+  forehead_width?: number
+  nose_length?: number
+  face_height?: number
 }
 
 type ContextData = {
@@ -18,6 +24,11 @@ type ContextData = {
   material?: string
   frame_weight?: string
   gender?: string
+  colors?: string
+  personality?: string
+  wearing_frequency?: string
+  existing_glasses?: string
+  brands?: string
 }
 
 export function scoreFrame(frame: Frame, scan: ScanData, context: ContextData): number {
@@ -116,9 +127,190 @@ export function scoreFrame(frame: Frame, scan: ScanData, context: ContextData): 
     if (context.gender && frame.gender !== context.gender) score -= 15
   }
 
-  const rawScore = Math.max(0, score)
-  const normalized = Math.round(60 + (rawScore / 120) * 38)
-  return Math.min(98, normalized)
+  // === GENRE (8 points max) ===
+  if (scan.gender) {
+    const isFemale = scan.gender === 'Female'
+    const isMale = scan.gender === 'Male'
+
+    if (isFemale) {
+      if (['Cat-eye', 'Ovale fin', 'Rond fin', 'Oversized'].includes(frame.style)) score += 8
+      if (['Wayfarer', 'Rectangulaire'].includes(frame.style) && frame.gender === 'Homme') score -= 6
+      if (frame.gender === 'Femme') score += 5
+    }
+
+    if (isMale) {
+      if (['Rectangulaire', 'Aviateur', 'Wayfarer', 'Browline'].includes(frame.style)) score += 8
+      if (['Cat-eye'].includes(frame.style)) score -= 10
+      if (frame.gender === 'Homme') score += 5
+    }
+  }
+
+  // === ÂGE (8 points max) ===
+  if (scan.age) {
+    const age = scan.age
+
+    if (age < 25) {
+      if (['Oversized', 'Géométrique', 'Cat-eye', 'Wayfarer'].includes(frame.style)) score += 8
+      if (frame.style_tags.some(t => ['Coloré', 'Streetwear', 'Avant-garde'].includes(t))) score += 5
+      if (['Browline', 'Clubmaster', 'Rimless'].includes(frame.style)) score -= 4
+    } else if (age >= 25 && age < 40) {
+      if (['Rectangulaire', 'Aviateur', 'Wayfarer', 'Rond'].includes(frame.style)) score += 6
+      if (frame.style_tags.some(t => ['Classique', 'Moderne', 'Intemporel'].includes(t))) score += 4
+    } else if (age >= 40 && age < 60) {
+      if (['Browline', 'Clubmaster', 'Rectangulaire', 'Aviateur'].includes(frame.style)) score += 8
+      if (frame.style_tags.some(t => ['Classique', 'Premium', 'Professionnel'].includes(t))) score += 5
+      if (['Oversized', 'Géométrique'].includes(frame.style)) score -= 4
+    } else if (age >= 60) {
+      if (['Rimless', 'Rectangulaire fin', 'Ovale fin', 'Rond fin'].includes(frame.style)) score += 10
+      if (frame.weight_grams < 15) score += 8
+      if (['Oversized', 'Wrap'].includes(frame.style)) score -= 6
+    }
+  }
+
+  // === COULEURS PORTÉES (6 points max) ===
+  if (context.colors) {
+    if (context.colors === 'Neutres') {
+      if (frame.material === 'Métal') score += 6
+      if (['Rimless', 'Rectangulaire fin', 'Aviateur'].includes(frame.style)) score += 4
+      if (frame.style_tags.some(t => ['Coloré', 'Avant-garde'].includes(t))) score -= 5
+    }
+    if (context.colors === 'Colorées') {
+      if (frame.material === 'Acétate') score += 6
+      if (['Cat-eye', 'Oversized', 'Géométrique'].includes(frame.style)) score += 4
+      if (frame.style_tags.some(t => ['Coloré', 'Artistique'].includes(t))) score += 4
+    }
+    if (context.colors === 'Sombres') {
+      if (['Rectangulaire', 'Wayfarer', 'Browline'].includes(frame.style)) score += 5
+      if (frame.style_tags.some(t => ['Classique', 'Premium'].includes(t))) score += 3
+    }
+    if (context.colors === 'Mixtes') {
+      if (['Clubmaster', 'Browline', 'Wayfarer'].includes(frame.style)) score += 4
+    }
+  }
+
+  // === PERSONNALITÉ (8 points max) ===
+  if (context.personality) {
+    if (context.personality === 'Discret') {
+      if (['Rimless', 'Rectangulaire fin', 'Ovale fin', 'Rond fin'].includes(frame.style)) score += 8
+      if (frame.weight_grams < 15) score += 4
+      if (['Oversized', 'Cat-eye', 'Géométrique'].includes(frame.style)) score -= 8
+    }
+    if (context.personality === 'Affirmé') {
+      if (['Oversized', 'Cat-eye', 'Géométrique', 'Clubmaster'].includes(frame.style)) score += 8
+      if (frame.style_tags.some(t => ['Avant-garde', 'Coloré', 'Design'].includes(t))) score += 5
+      if (['Rimless', 'Rectangulaire fin'].includes(frame.style)) score -= 5
+    }
+  }
+
+  // === FRÉQUENCE DE PORT (5 points max) ===
+  if (context.wearing_frequency) {
+    if (context.wearing_frequency === 'Toute la journée') {
+      if (frame.weight_grams < 15) score += 8
+      if (['Rimless', 'Rectangulaire fin', 'Ovale fin'].includes(frame.style)) score += 5
+      if (frame.weight_grams > 28) score -= 8
+    }
+    if (context.wearing_frequency === 'Occasionnellement') {
+      if (['Cat-eye', 'Oversized', 'Géométrique'].includes(frame.style)) score += 4
+    }
+    if (context.wearing_frequency === 'Pour lire') {
+      if (['Rectangulaire fin', 'Rimless', 'Rectangulaire'].includes(frame.style)) score += 6
+      if (frame.weight_grams < 18) score += 4
+    }
+  }
+
+  // === LUNETTES EXISTANTES (6 points max) ===
+  if (context.existing_glasses) {
+    if (context.existing_glasses === 'Je veux changer') {
+      if (['Géométrique', 'Cat-eye', 'Oversized', 'Clubmaster'].includes(frame.style)) score += 6
+    }
+    if (context.existing_glasses === 'Première paire') {
+      if (['Rectangulaire', 'Aviateur', 'Wayfarer', 'Rond'].includes(frame.style)) score += 8
+      if (frame.style_tags.some(t => ['Classique', 'Intemporel', 'Accessible'].includes(t))) score += 4
+      if (['Géométrique', 'Oversized', 'Avant-garde'].includes(frame.style)) score -= 6
+    }
+    if (context.existing_glasses === "J'aime mon style actuel") {
+      if (context.style && frame.style_tags.includes(context.style)) score += 8
+    }
+  }
+
+  // === MARQUES (filtre doux) ===
+  if (context.brands) {
+    if (context.brands === 'Marques connues') {
+      const knownBrands = ['Ray-Ban', 'Persol', 'Oakley', 'Tom Ford', 'Gucci', 'Prada', 'Dior', 'Saint Laurent', 'Chloé']
+      if (knownBrands.includes(frame.brand)) score += 8
+      else score -= 3
+    }
+    if (context.brands === 'Indépendant') {
+      const independentBrands = ['Anne et Valentin', 'Face à Face', 'Matsuda', 'Mykita', 'Lindberg', 'Silhouette', 'Alain Mikli']
+      if (independentBrands.includes(frame.brand)) score += 10
+      else score -= 2
+    }
+  }
+
+  // === MORPHOLOGIE PRÉCISE (10 points max) ===
+
+  if (scan.chin_height && scan.face_height) {
+    const chinRatio = scan.chin_height / scan.face_height
+    if (chinRatio < 0.18) {
+      if (['Oversized', 'Cat-eye'].includes(frame.style)) score -= 6
+      if (['Rectangulaire fin', 'Aviateur'].includes(frame.style)) score += 6
+    }
+    if (chinRatio > 0.28) {
+      if (['Wayfarer', 'Browline'].includes(frame.style)) score += 6
+      if (['Rimless', 'Rectangulaire fin'].includes(frame.style)) score -= 4
+    }
+  }
+
+  if (scan.forehead_width && scan.face_width) {
+    const foreheadRatio = scan.forehead_width / scan.face_width
+    if (foreheadRatio < 0.80) {
+      if (['Browline', 'Clubmaster'].includes(frame.style)) score -= 8
+      if (['Aviateur', 'Ovale fin'].includes(frame.style)) score += 6
+    }
+    if (foreheadRatio > 0.95) {
+      if (['Browline', 'Clubmaster'].includes(frame.style)) score += 8
+      if (['Cat-eye'].includes(frame.style)) score -= 4
+    }
+  }
+
+  if (scan.nose_length && scan.face_height) {
+    const noseLengthRatio = scan.nose_length / scan.face_height
+    if (noseLengthRatio > 0.38) {
+      if (['Aviateur', 'Ovale fin'].includes(frame.style)) score += 8
+      if (frame.bridge_width >= 20) score += 4
+      if (['Browline'].includes(frame.style)) score -= 4
+    }
+    if (noseLengthRatio < 0.28) {
+      if (['Browline', 'Cat-eye'].includes(frame.style)) score += 6
+      if (['Aviateur'].includes(frame.style)) score -= 4
+    }
+  }
+
+  if (scan.ratio) {
+    if (scan.ratio >= 1.10 && scan.ratio <= 1.25) {
+      if (['Rectangulaire', 'Aviateur', 'Wayfarer'].includes(frame.style)) score += 5
+    }
+    if (scan.ratio > 1.35) {
+      if (['Wayfarer', 'Oversized', 'Clubmaster'].includes(frame.style)) score += 8
+      if (['Rimless', 'Rectangulaire fin'].includes(frame.style)) score -= 6
+    }
+    if (scan.ratio < 1.05) {
+      if (['Cat-eye', 'Browline', 'Rectangulaire'].includes(frame.style)) score += 8
+      if (['Oversized', 'Rond'].includes(frame.style)) score -= 6
+    }
+  }
+
+  if (score < 35) return 0
+
+  const normalized = (() => {
+    if (score >= 90) return Math.round(92 + (score - 90) * 0.6)
+    if (score >= 70) return Math.round(78 + (score - 70) * 0.7)
+    if (score >= 50) return Math.round(65 + (score - 50) * 0.65)
+    if (score >= 35) return Math.round(60 + (score - 35) * 0.33)
+    return 0
+  })()
+
+  return Math.min(98, Math.max(0, normalized))
 }
 
 export function getTopFrames(
@@ -128,6 +320,7 @@ export function getTopFrames(
 ): (Frame & { score: number })[] {
   return FRAMES_CATALOG
     .map(frame => ({ ...frame, score: scoreFrame(frame, scan, context) }))
+    .filter(frame => frame.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
 }
