@@ -546,7 +546,7 @@ export default function ResultsPage() {
           {!session ? (
             <>
               <button
-                onClick={() => router.push('/login?redirect=/contexts/new')}
+                onClick={() => router.push('/register')}
                 className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
               >
                 Créer un contexte pour affiner →
@@ -558,35 +558,32 @@ export default function ResultsPage() {
                 Voir les opticiens quand même →
               </button>
             </>
-          ) : !activeContext ? (
-            <>
-              <button
-                onClick={() => router.push('/contexts/new')}
-                className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
-              >
-                Créer un contexte pour affiner →
-              </button>
-              <button
-                onClick={() => router.push('/opticians')}
-                className="w-full border border-gray-200 text-gray-500 py-2.5 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
-              >
-                Voir les opticiens →
-              </button>
-            </>
           ) : (
-            <button
-              onClick={() => {
-                const frameStyles = topFrames
-                  .slice(0, 3)
-                  .map(f => f.style)
-                  .filter((v, i, a) => a.indexOf(v) === i)
-                  .join(',')
-                router.push(`/opticians?contextId=${contextId || ''}&frames=${encodeURIComponent(frameStyles)}`)
-              }}
-              className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
-            >
-              Trouver ces montures près de moi →
-            </button>
+            <>
+              {session && hasContext && (
+                <button
+                  onClick={() => {
+                    const frameStyles = topFrames
+                      .slice(0, 3)
+                      .map(f => f.style)
+                      .filter((v, i, a) => a.indexOf(v) === i)
+                      .join(',')
+                    router.push(`/opticians?contextId=${contextId || ''}&frames=${encodeURIComponent(frameStyles)}`)
+                  }}
+                  className="w-full bg-[#1E3A8A] text-white py-4 rounded-xl font-semibold text-base"
+                >
+                  Voir les opticiens →
+                </button>
+              )}
+              {session && !hasContext && (
+                <button
+                  onClick={() => router.push('/contexts/new')}
+                  className="w-full bg-[#1E3A8A] text-white py-4 rounded-xl font-semibold text-base"
+                >
+                  Créer un contexte pour affiner →
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

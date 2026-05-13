@@ -718,10 +718,10 @@ export default function OpticiansPage() {
                 Se connecter
               </button>
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push('/register')}
                 className="w-full text-sm text-secondary hover:underline"
               >
-                Créer un compte
+                Créer un compte →
               </button>
             </div>
           </div>

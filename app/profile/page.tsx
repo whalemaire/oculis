@@ -18,6 +18,10 @@ export default function ProfilePage() {
   const [progressScore, setProgressScore] = useState(0)
   const [progressSteps, setProgressSteps] = useState({ scan: false, account: false, context: false })
   const [showToast, setShowToast] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordMsg, setPasswordMsg] = useState('')
 
   const fetchScan = async () => {
     if (!session?.user?.id) return
@@ -74,6 +78,25 @@ export default function ProfilePage() {
     router.push('/opticians')
   }
 
+  const setPassword = async () => {
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg('Les mots de passe ne correspondent pas')
+      return
+    }
+    if (newPassword.length < 8) {
+      setPasswordMsg('Minimum 8 caractères')
+      return
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) setPasswordMsg('Erreur : ' + error.message)
+    else {
+      setPasswordMsg('Mot de passe défini ✓')
+      setShowPasswordForm(false)
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+  }
+
   const deleteContext = async (id: string) => {
     await supabase.from('context').delete().eq('id', id)
     setContexts((prev) => prev.filter((c) => c.id !== id))
@@ -84,7 +107,7 @@ export default function ProfilePage() {
     if (!session?.user?.id) return
     const hasScan = !!scanData
     const hasAccount = !!session?.user?.id
-    const hasContext = contexts.length > 0
+    const hasContext = contexts.filter(c => c.name !== 'Mon profil de base').length > 0
     let score = 0
     if (hasScan) score += 30
     if (hasAccount) score += 20
@@ -131,7 +154,7 @@ export default function ProfilePage() {
       <div className="max-w-xl mx-auto px-5 py-6 space-y-4">
 
         {/* Section 0 — Progression */}
-        {session && (
+        {session && progressScore < 100 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <div className="flex items-center justify-between mb-3">
               <p className="font-bold text-[#0A2540]">Ta progression</p>
@@ -345,6 +368,45 @@ export default function ProfilePage() {
               </button>
             </div>
 
+          </div>
+
+          <div className="border-t border-gray-100 pt-4 mt-4">
+            <button
+              onClick={() => setShowPasswordForm(!showPasswordForm)}
+              className="text-sm text-[#1E3A8A] font-medium"
+            >
+              🔑 {showPasswordForm ? 'Annuler' : 'Définir un mot de passe'}
+            </button>
+
+            {showPasswordForm && (
+              <div className="mt-3 space-y-2">
+                <input
+                  type="password"
+                  placeholder="Nouveau mot de passe (min 8 car.)"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirmer le mot de passe"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm"
+                />
+                {passwordMsg && (
+                  <p className={`text-xs ${passwordMsg.includes('✓') ? 'text-green-500' : 'text-red-500'}`}>
+                    {passwordMsg}
+                  </p>
+                )}
+                <button
+                  onClick={setPassword}
+                  className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl text-sm font-medium"
+                >
+                  Enregistrer
+                </button>
+              </div>
+            )}
           </div>
 
           <button

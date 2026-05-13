@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/app/components/AuthProvider'
+import { supabase } from '@/lib/supabase'
 
 type TextQuestion = {
   id: string
@@ -184,10 +185,21 @@ export default function NewContextPage() {
     else advance(step - 1)
   }
 
+  const handleSelect = (value: string) => {
+    setAnswers(prev => ({ ...prev, [question.id]: value }))
+    setTimeout(() => {
+      if (step < TOTAL - 1) {
+        advance(step + 1)
+      } else {
+        handleSubmit()
+      }
+    }, 300)
+  }
+
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      await fetch('/api/contexts', {
+      const res = await fetch('/api/contexts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -196,8 +208,24 @@ export default function NewContextPage() {
           is_active: true,
         }),
       })
-    } catch {}
-    router.push('/results')
+      const newContext = await res.json()
+
+      const { data: scanArray } = await supabase
+        .from('scan')
+        .select('*')
+        .eq('user_id', session!.user.id)
+        .limit(1)
+
+      const scan = scanArray?.[0]
+
+      if (scan) {
+        router.push(`/results?contextId=${newContext.id}&shape=${scan.face_shape}&confidence=${scan.confidence}&ipd=${scan.ipd}&ratio=${scan.ratio}&gender=${scan.gender || 'Male'}&from=context`)
+      } else {
+        router.push(`/opticians?contextId=${newContext.id}`)
+      }
+    } catch {
+      router.push('/opticians')
+    }
   }
 
   const progress = ((step + 1) / TOTAL) * 100
@@ -258,7 +286,7 @@ export default function NewContextPage() {
               return (
                 <button
                   key={opt.label}
-                  onClick={() => setAnswer(opt.label)}
+                  onClick={() => handleSelect(opt.label)}
                   className={`w-[calc(50%-6px)] sm:w-[140px] h-[120px] sm:h-[140px] flex flex-col items-center justify-center gap-2 rounded-card border transition-all ${
                     selected
                       ? 'border-2 border-[#1E3A8A] bg-[#EEF2FF] scale-105 shadow-card'
@@ -283,7 +311,7 @@ export default function NewContextPage() {
               return (
                 <button
                   key={opt.label}
-                  onClick={() => setAnswer(opt.label)}
+                  onClick={() => handleSelect(opt.label)}
                   className={`w-[calc(50%-6px)] sm:w-[140px] h-[120px] sm:h-[140px] flex flex-col items-center justify-center gap-1.5 rounded-card border transition-all ${
                     selected
                       ? 'border-2 border-[#1E3A8A] bg-[#EEF2FF] scale-105 shadow-card'
@@ -301,21 +329,26 @@ export default function NewContextPage() {
           </div>
         )}
 
-        {/* Continue button — appears when an option is selected */}
-        {canContinue && (
+        {/* Text question — Continue on Enter or button */}
+        {question.type === 'text' && canContinue && (
           <div className="mt-8">
             <button
               onClick={handleContinue}
               disabled={submitting}
               className="w-full bg-primary text-white py-3.5 rounded-xl font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {submitting
-                ? 'Enregistrement…'
-                : step === TOTAL - 1
-                  ? 'Terminer'
-                  : 'Continuer'}
+              {submitting ? 'Enregistrement…' : 'Continuer'}
             </button>
           </div>
+        )}
+
+        {step > 0 && (
+          <button
+            onClick={() => advance(step - 1)}
+            className="text-sm text-gray-400 mt-4"
+          >
+            ← Retour
+          </button>
         )}
       </div>
     </main>
