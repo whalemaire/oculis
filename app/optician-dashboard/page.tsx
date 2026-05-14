@@ -1,13 +1,13 @@
 export const metadata = {
-  title: 'Espace opticien — Oculis',
-  description: 'Gérez votre boutique et votre stock de montures sur la plateforme Oculis.',
+  title: 'Espace opticien — Figla',
+  description: 'Gérez votre boutique et votre stock de montures sur la plateforme Figla.',
 }
 
 export default function OpticianDashboardPage() {
   return (
     <main className="min-h-screen bg-[#F4F6F9]">
       <header className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100">
-        <span className="text-xl font-bold text-[#0A2540]">Oculis</span>
+        <span className="text-xl font-bold text-[#0A2540]">Figla</span>
         <span className="text-sm text-gray-400">Espace opticien</span>
       </header>
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">

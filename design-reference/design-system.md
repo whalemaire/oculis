@@ -1,4 +1,4 @@
-# Oculis — Design System
+# Figla — Design System
 
 > Référence des tokens sémantiques définis dans `tailwind.config.ts`.
 > Toutes les valeurs sont extraites des design tokens du fichier `design-tokens.json`.
