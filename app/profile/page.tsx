@@ -151,13 +151,13 @@ export default function ProfilePage() {
         </button>
       </header>
 
-      <div className="max-w-xl mx-auto px-5 py-6 space-y-4">
+      <div className="max-w-xl mx-auto px-4 md:px-6 py-6 space-y-6">
 
         {/* Section 0 — Progression */}
         {session && progressScore < 100 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <div className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100">
             <div className="flex items-center justify-between mb-3">
-              <p className="font-bold text-[#0A2540]">Ta progression</p>
+              <p className="text-base md:text-lg font-bold text-[#0A2540]">Ta progression</p>
               <span className="text-sm font-bold text-[#1E3A8A]">{progressScore}%</span>
             </div>
 
@@ -169,20 +169,20 @@ export default function ProfilePage() {
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              <div className={`flex flex-col items-center gap-1 p-3 rounded-xl text-center ${progressSteps.account ? 'bg-green-50' : 'bg-gray-50'}`}>
-                <span className="text-xl">{progressSteps.account ? '✅' : '👤'}</span>
-                <p className="text-[11px] font-semibold text-[#0A2540]">Compte</p>
-                <p className="text-[10px] text-gray-400">+20%</p>
+              <div className={`text-center p-2 md:p-3 rounded-xl ${progressSteps.account ? 'bg-green-50' : 'bg-gray-50'}`}>
+                <p className="text-lg md:text-xl">{progressSteps.account ? '✅' : '👤'}</p>
+                <p className="text-[10px] md:text-xs font-semibold text-[#0A2540]">Compte</p>
+                <p className="text-[9px] md:text-[10px] text-gray-400">+20%</p>
               </div>
-              <div className={`flex flex-col items-center gap-1 p-3 rounded-xl text-center ${progressSteps.scan ? 'bg-green-50' : 'bg-gray-50'}`}>
-                <span className="text-xl">{progressSteps.scan ? '✅' : '📷'}</span>
-                <p className="text-[11px] font-semibold text-[#0A2540]">Scan</p>
-                <p className="text-[10px] text-gray-400">+30%</p>
+              <div className={`text-center p-2 md:p-3 rounded-xl ${progressSteps.scan ? 'bg-green-50' : 'bg-gray-50'}`}>
+                <p className="text-lg md:text-xl">{progressSteps.scan ? '✅' : '📷'}</p>
+                <p className="text-[10px] md:text-xs font-semibold text-[#0A2540]">Scan</p>
+                <p className="text-[9px] md:text-[10px] text-gray-400">+30%</p>
               </div>
-              <div className={`flex flex-col items-center gap-1 p-3 rounded-xl text-center ${progressSteps.context ? 'bg-green-50' : 'bg-gray-50'}`}>
-                <span className="text-xl">{progressSteps.context ? '✅' : '🎯'}</span>
-                <p className="text-[11px] font-semibold text-[#0A2540]">Contexte</p>
-                <p className="text-[10px] text-gray-400">+50%</p>
+              <div className={`text-center p-2 md:p-3 rounded-xl ${progressSteps.context ? 'bg-green-50' : 'bg-gray-50'}`}>
+                <p className="text-lg md:text-xl">{progressSteps.context ? '✅' : '🎯'}</p>
+                <p className="text-[10px] md:text-xs font-semibold text-[#0A2540]">Contexte</p>
+                <p className="text-[9px] md:text-[10px] text-gray-400">+50%</p>
               </div>
             </div>
 
@@ -201,9 +201,9 @@ export default function ProfilePage() {
         )}
 
         {/* Section 1 — Mes mensurations */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <p className="font-bold text-[#0A2540]">Mes mensurations faciales</p>
+            <p className="text-base md:text-lg font-bold text-[#0A2540]">Mes mensurations faciales</p>
             {scanData && (
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#EEF2FF] text-[#1E3A8A]">
                 1 scan biométrique
@@ -252,9 +252,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Section 2 — Mes contextes */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <p className="font-bold text-[#0A2540]">Mes contextes</p>
+            <p className="text-base md:text-lg font-bold text-[#0A2540]">Mes contextes</p>
             <button
               onClick={() => router.push('/contexts/new')}
               className="text-sm text-[#1E3A8A] font-medium hover:underline"
@@ -340,8 +340,8 @@ export default function ProfilePage() {
         </div>
 
         {/* Section 3 — Mon compte */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <p className="font-bold text-[#0A2540] mb-4">Mon compte</p>
+        <div className="bg-white rounded-2xl p-4 md:p-5 border border-gray-100">
+          <p className="text-base md:text-lg font-bold text-[#0A2540] mb-4">Mon compte</p>
           <div className="divide-y divide-gray-50">
 
             <div className="flex items-center justify-between py-3">

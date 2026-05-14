@@ -37,8 +37,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F4F6F9] flex items-center justify-center px-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-sm p-8 flex flex-col gap-6">
+    <main className="min-h-screen bg-[#F4F6F9] flex items-center justify-center px-4 py-8">
+      <div className="bg-white rounded-2xl p-6 md:p-8 w-full max-w-sm shadow-sm flex flex-col gap-5">
 
         <p className="text-center text-2xl font-extrabold text-[#0A2540]">Oculis</p>
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
           <p className="text-sm text-gray-400">Connecte-toi à ton compte</p>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="space-y-3">
           <input
             type="email"
             placeholder="ton@email.com"
@@ -80,7 +80,7 @@ export default function LoginPage() {
           <button
             onClick={signIn}
             disabled={!email || !password || loading}
-            className="w-full bg-[#1E3A8A] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full bg-[#1E3A8A] text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {loading ? 'Connexion…' : 'Se connecter'}
           </button>

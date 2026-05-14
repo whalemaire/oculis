@@ -320,14 +320,10 @@ export default function ResultsPage() {
   return (
     <main className="min-h-screen bg-[#F4F6F9] flex flex-col pb-24">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100">
-        <span className="text-xl font-bold text-[#0A2540]">Oculis</span>
-        <button
-          onClick={() => router.push(from === 'profile' ? '/profile' : '/scan')}
-          className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
-        >
-          ← Retour
-        </button>
+      <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 sticky top-0 z-10">
+        <button onClick={() => router.back()} className="text-gray-400 text-sm">←</button>
+        <span className="font-bold text-[#0A2540]">Oculis</span>
+        <button onClick={() => router.push('/profile')} className="text-gray-400 text-sm">👤</button>
       </header>
 
       <div className="max-w-xl mx-auto w-full px-5 py-6 space-y-6">
@@ -395,11 +391,11 @@ export default function ResultsPage() {
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">
             Visages similaires
           </p>
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible">
             {celebrities.map((celeb) => (
               <div
                 key={celeb.name}
-                className="flex-shrink-0 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center gap-2 w-36"
+                className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col items-center gap-2"
               >
                 <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-base font-bold text-gray-400">
                   {celeb.name.split(' ').map((n: string) => n[0]).join('')}
@@ -478,7 +474,7 @@ export default function ResultsPage() {
               Actualiser mes résultats
             </button>
           )}
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {topFrames.map((frame) => (
               <div key={frame.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <div className="bg-gray-50 p-8 flex items-center justify-center relative">
@@ -512,7 +508,7 @@ export default function ResultsPage() {
                     <div className="flex gap-2 pt-3 border-t border-gray-100">
                       <button
                         onClick={() => sendFeedback(frame.style, 'like')}
-                        className="flex-1 py-2 rounded-lg border text-base transition-all"
+                        className="flex-1 py-3 md:py-2 rounded-lg border text-base transition-all"
                         style={{
                           borderColor: feedbacks[frame.style] === 'like' ? '#10B981' : '#E2E8F0',
                           background: feedbacks[frame.style] === 'like' ? '#D1FAE5' : 'white'
@@ -520,7 +516,7 @@ export default function ResultsPage() {
                       >👍</button>
                       <button
                         onClick={() => sendFeedback(frame.style, 'dislike')}
-                        className="flex-1 py-2 rounded-lg border text-base transition-all"
+                        className="flex-1 py-3 md:py-2 rounded-lg border text-base transition-all"
                         style={{
                           borderColor: feedbacks[frame.style] === 'dislike' ? '#EF4444' : '#E2E8F0',
                           background: feedbacks[frame.style] === 'dislike' ? '#FEE2E2' : 'white'
@@ -537,7 +533,7 @@ export default function ResultsPage() {
       </div>
 
       {/* Sticky bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5 py-3.5">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 pb-safe">
         <div className="max-w-xl mx-auto flex flex-col gap-2">
           {!session ? (
             <>

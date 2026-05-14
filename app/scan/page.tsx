@@ -127,35 +127,31 @@ export default function ScanPage() {
   return (
     <main className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3.5 border-b border-border">
-        <span className="text-xl font-bold text-primary">Oculis</span>
-        <button
-          onClick={() => router.push(from === 'profile' ? '/profile' : '/opticians')}
-          className="text-sm text-muted hover:text-subtle flex items-center gap-1 transition-colors"
-        >
-          ← Retour
-        </button>
+      <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
+        <button onClick={() => router.push('/opticians')} className="text-gray-400 text-sm">←</button>
+        <span className="font-bold text-[#0A2540]">Scanner</span>
+        <div className="w-8" />
       </header>
 
       <div className="flex flex-col items-center justify-center flex-1 px-6 py-10 gap-8 max-w-sm mx-auto w-full">
 
         {/* Info section — 3 columns */}
-        <div className="grid grid-cols-3 gap-4 w-full">
+        <div className="grid grid-cols-3 gap-2 px-4 py-4 bg-[#F4F6F9] rounded-2xl mx-4 w-full">
           {[
             { icon: '👁️', title: 'Forme du visage', desc: 'Détectée depuis ta photo' },
             { icon: '💡', title: 'Montures adaptées', desc: 'Selon ton style et budget' },
             { icon: '📍', title: 'Près de toi', desc: 'Opticiens locaux avec tes montures' },
           ].map((item) => (
-            <div key={item.title} className="flex flex-col items-center text-center gap-1.5">
-              <span className="text-2xl">{item.icon}</span>
-              <p className="text-xs font-semibold text-primary leading-tight">{item.title}</p>
-              <p className="text-sm text-muted leading-tight">{item.desc}</p>
+            <div key={item.title} className="text-center">
+              <div className="text-xl md:text-2xl mb-1">{item.icon}</div>
+              <p className="text-xs font-semibold text-[#0A2540] leading-tight">{item.title}</p>
+              <p className="text-[10px] text-[#64748B] mt-0.5 leading-tight hidden md:block">{item.desc}</p>
             </div>
           ))}
         </div>
 
         {/* Camera viewport */}
-        <div className="w-72 h-72 bg-surface rounded-3xl border-2 border-dashed border-border overflow-hidden relative flex items-center justify-center">
+        <div className="w-full max-w-[320px] md:max-w-[400px] mx-auto aspect-square rounded-3xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 relative flex items-center justify-center">
 
           {/* Live video */}
           {cameraState !== 'denied' && (
@@ -220,9 +216,9 @@ export default function ScanPage() {
         )}
 
         {/* CTA */}
-        <div className="flex flex-col items-center gap-3 w-full">
+        <div className="px-4 w-full max-w-sm mx-auto space-y-3">
           {analyzing ? (
-            <div className="w-full bg-secondary text-white py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+            <div className="w-full bg-[#1E3A8A] text-white py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2">
               <span>Analyse en cours</span>
               <span className="flex gap-0.5">
                 <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -234,12 +230,12 @@ export default function ScanPage() {
             <button
               onClick={capture}
               disabled={cameraState !== 'active'}
-              className="w-full bg-secondary text-white py-3.5 rounded-xl font-semibold text-sm hover:bg-secondary-alt transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full bg-[#1E3A8A] text-white py-4 rounded-xl font-semibold text-base hover:bg-[#162d6b] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               📷 Scanner mon visage
             </button>
           )}
-          <label className="text-sm text-muted hover:text-subtle transition-colors cursor-pointer">
+          <label className="w-full text-[#1E3A8A] text-sm font-medium py-2 flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity">
             ou uploader une photo
             <input type="file" accept="image/*" className="sr-only" onChange={() => router.push('/results')} />
           </label>

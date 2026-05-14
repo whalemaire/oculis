@@ -348,8 +348,8 @@ export default function OpticiansPage() {
 
   return (
     <main className="min-h-screen bg-surface flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-3.5 border-b border-border bg-white z-10 relative">
+      {/* Header — desktop only */}
+      <header className="hidden md:flex items-center justify-between px-6 py-3.5 border-b border-border bg-white z-10 relative">
         <span className="text-xl font-bold text-primary">Oculis</span>
         <div className="flex items-center gap-2">
           {userType === null && (
@@ -385,9 +385,17 @@ export default function OpticiansPage() {
                 </button>
               ) : (
                 <div className="relative" style={{ position: 'relative', zIndex: 99999 }}>
+                  {/* Mobile — icône compacte */}
                   <button
                     onClick={() => setShowContextDropdown(!showContextDropdown)}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-secondary-lighter border border-secondary-light text-secondary rounded-xl text-sm font-semibold hover:bg-secondary-light transition-colors"
+                    className="md:hidden bg-[#1E3A8A] text-white p-2 rounded-full text-sm"
+                  >
+                    {USAGE_EMOJI[activeContext?.usage] ?? '🎯'}
+                  </button>
+                  {/* Desktop — bouton complet */}
+                  <button
+                    onClick={() => setShowContextDropdown(!showContextDropdown)}
+                    className="hidden md:flex items-center gap-1.5 px-3 py-2 bg-secondary-lighter border border-secondary-light text-secondary rounded-xl text-sm font-semibold hover:bg-secondary-light transition-colors"
                   >
                     <span>{USAGE_EMOJI[activeContext?.usage] ?? '🎯'}</span>
                     <span>{activeContext?.name ?? 'Contexte'}</span>
@@ -443,7 +451,13 @@ export default function OpticiansPage() {
               )}
               <button
                 onClick={() => router.push('/profile')}
-                className="border border-border text-primary px-4 py-2 rounded-xl text-sm font-medium hover:bg-surface transition-colors"
+                className="md:hidden border border-border text-primary p-2 rounded-full text-sm"
+              >
+                👤
+              </button>
+              <button
+                onClick={() => router.push('/profile')}
+                className="hidden md:block border border-border text-primary px-4 py-2 rounded-xl text-sm font-medium hover:bg-surface transition-colors"
               >
                 Mon profil
               </button>
@@ -460,60 +474,275 @@ export default function OpticiansPage() {
         </div>
       </header>
 
-      {/* Onboarding banner — non connecté */}
-      {!session && (
-        <div style={{
-          background: 'linear-gradient(135deg, #0A2540 0%, #1E3A8A 100%)',
-          padding: '14px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div>
-            <p style={{ color: 'white', fontWeight: '600', fontSize: '14px', margin: 0 }}>
-              👓 Trouve les lunettes faites pour toi
-            </p>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', margin: '2px 0 0' }}>
-              Scanne ton visage en 10 secondes
-            </p>
+      {/* Onboarding banner + Context banner — desktop only */}
+      <div className="hidden md:block">
+        {!session && (
+          <div style={{
+            background: 'linear-gradient(135deg, #0A2540 0%, #1E3A8A 100%)',
+            padding: '14px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <p style={{ color: 'white', fontWeight: '600', fontSize: '14px', margin: 0 }}>
+                👓 Trouve les lunettes faites pour toi
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', margin: '2px 0 0' }}>
+                Scanne ton visage en 10 secondes
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/scan')}
+              style={{
+                background: 'white',
+                color: '#0A2540',
+                padding: '8px 20px',
+                borderRadius: '100px',
+                fontSize: '13px',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Commencer →
+            </button>
           </div>
-          <button
-            onClick={() => router.push('/scan')}
-            style={{
-              background: 'white',
-              color: '#0A2540',
-              padding: '8px 20px',
-              borderRadius: '100px',
-              fontSize: '13px',
-              fontWeight: '600',
-              border: 'none',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Commencer →
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* Context banner */}
-      {activeContext && showBanner && (
-        <div className="flex items-center justify-between px-5 py-2 bg-secondary-lighter border-b border-secondary-light text-xs text-secondary">
-          <span>🎯 {activeContext.name} — {generateContextSummary(activeContext)}</span>
-          <button
-            onClick={() => { setShowBanner(false); setActiveContext(null); setActiveFilters([]) }}
-            className="ml-3 text-secondary/60 hover:text-secondary font-bold text-sm leading-none"
-          >
-            ×
-          </button>
-        </div>
-      )}
+        {activeContext && showBanner && (
+          <div className="flex items-center justify-between px-5 py-2 bg-secondary-lighter border-b border-secondary-light text-xs text-secondary">
+            <span>🎯 {activeContext.name} — {generateContextSummary(activeContext)}</span>
+            <button
+              onClick={() => { setShowBanner(false); setActiveContext(null); setActiveFilters([]) }}
+              className="ml-3 text-secondary/60 hover:text-secondary font-bold text-sm leading-none"
+            >
+              ×
+            </button>
+          </div>
+        )}
+      </div>
 
-      {/* Split layout */}
-      <div style={{ display: 'flex', height: 'calc(100vh - 61px)', overflow: 'hidden' }}>
+      {/* MOBILE LAYOUT */}
+      <div className="md:hidden flex flex-col h-screen">
+
+        {/* Header mobile */}
+        <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 z-10">
+          <span className="text-lg font-bold text-[#0A2540]">Oculis</span>
+          <div className="flex gap-2">
+            {session ? (
+              <>
+                <button
+                  onClick={() => setShowContextDropdown(!showContextDropdown)}
+                  className="bg-[#EEF2FF] text-[#1E3A8A] px-3 py-1.5 rounded-full text-xs font-medium"
+                >
+                  🎯 {activeContext?.name || 'Contexte'}
+                </button>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="bg-gray-100 text-gray-600 w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                >
+                  👤
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => router.push('/scan')}
+                  className="bg-[#1E3A8A] text-white px-3 py-1.5 rounded-full text-xs font-medium"
+                >
+                  📷 Scan
+                </button>
+                <button
+                  onClick={() => router.push('/login')}
+                  className="border border-[#1E3A8A] text-[#1E3A8A] px-3 py-1.5 rounded-full text-xs font-medium"
+                >
+                  Se connecter
+                </button>
+              </>
+            )}
+          </div>
+          {showContextDropdown && (
+            <>
+              <div
+                className="fixed inset-0"
+                style={{ zIndex: 99998 }}
+                onClick={() => setShowContextDropdown(false)}
+              />
+              <div
+                style={{
+                  position: 'fixed',
+                  top: '61px',
+                  left: '8px',
+                  right: '8px',
+                  backgroundColor: 'white',
+                  borderRadius: '16px',
+                  boxShadow: '0 4px 24px rgba(10,37,64,0.15)',
+                  border: '1px solid #E2E8F0',
+                  zIndex: 99999,
+                  overflow: 'hidden'
+                }}
+              >
+                {contexts.map((ctx) => (
+                  <button
+                    key={ctx.id}
+                    onClick={() => switchContext(ctx.id)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', fontSize: '14px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    <span style={{ color: '#0A2540', fontWeight: '500' }}>{ctx.name}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {ctx.name === 'Mon profil de base' && <span style={{ fontSize: '12px' }}>🔒</span>}
+                      {activeContext?.id === ctx.id && <span style={{ color: '#1E3A8A' }}>✓</span>}
+                    </span>
+                  </button>
+                ))}
+                <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '4px', paddingTop: '4px' }}>
+                  <button
+                    onClick={() => { setShowContextDropdown(false); router.push('/contexts/new') }}
+                    style={{ width: '100%', padding: '10px 16px', fontSize: '14px', color: '#1E3A8A', fontWeight: '500', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    + Nouveau contexte
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </header>
+
+        {/* Map fullscreen */}
+        <div className="flex-1 relative" style={{ zIndex: 1 }}>
+          <LeafletMap opticians={OPTICIANS} onMarkerClick={handleOpticianClick} />
+        </div>
+
+        {/* Bottom sheet */}
+        <div className="bg-white border-t border-gray-100 max-h-[45vh] overflow-y-auto">
+          {/* Filter pills */}
+          <div className="px-4 pt-3 pb-2 flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+            {FRAME_FILTERS.map(f => (
+              <button
+                key={f}
+                onClick={() => {
+                  if (f === 'All') { setActiveFilters([]); return }
+                  setActiveFilters(prev =>
+                    prev.includes(f) ? prev.filter(x => x !== f) : [...prev, f]
+                  )
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all border ${
+                  activeFilters.includes(f)
+                    ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                    : f === 'All' && activeFilters.length === 0
+                    ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                    : 'bg-white text-gray-600 border-gray-200'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          {/* Optician cards */}
+          <div className="px-4 pb-4 space-y-2">
+            {filteredOpticians.map((opt) => (
+              <div
+                key={opt.id}
+                onClick={() => handleOpticianClick(opt.id)}
+                className={`rounded-xl border p-3 cursor-pointer transition-all ${
+                  selectedId === opt.id
+                    ? 'border-secondary bg-secondary-lighter/40 shadow-[inset_3px_0_0_0_#0A2540]'
+                    : 'border-border bg-white'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-bold text-primary text-sm truncate">{opt.name}</p>
+                  <span className="text-xs text-muted flex-shrink-0">{opt.distance}</span>
+                </div>
+                <p className="text-xs text-muted mt-0.5 truncate">{opt.address}</p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className={`text-[10px] font-medium ${opt.isOpen ? 'text-success' : 'text-red-400'}`}>
+                    {opt.isOpen ? `Ouvert · jusqu'à ${opt.openUntil}` : 'Fermé'}
+                  </span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    activeFilters.length === 0 || opt.frames.some(f => activeFilters.includes(f))
+                      ? 'bg-secondary-light text-secondary'
+                      : 'bg-accent-light text-accent-dark'
+                  }`}>
+                    {activeFilters.length === 0 || opt.frames.some(f => activeFilters.includes(f)) ? 'Match' : 'Partiel'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Detail drawer mobile — overlays everything */}
+        {selected && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'white',
+            zIndex: 9999,
+            overflowY: 'auto',
+            padding: '24px'
+          }}>
+            <button
+              onClick={() => setSelectedId(null)}
+              className="mb-4 flex items-center gap-2 text-gray-500 text-sm"
+            >
+              ← Retour
+            </button>
+            <h2 className="text-2xl font-bold" style={{ color: '#0A2540', marginBottom: '4px' }}>
+              {selected.name}
+            </h2>
+            <p className="text-sm" style={{ color: '#64748B', marginBottom: '16px' }}>
+              {selected.address} · {selected.distance}
+            </p>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <span className="text-xs font-medium" style={{ background: '#EEF2FF', color: '#1E3A8A', padding: '4px 12px', borderRadius: '100px' }}>
+                ✓ Perfect match
+              </span>
+              <span className="text-xs font-medium" style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 12px', borderRadius: '100px' }}>
+                ✓ In stock
+              </span>
+              <span className="text-xs font-medium" style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 12px', borderRadius: '100px' }}>
+                Ouvert jusqu'à {selected.openUntil}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <span style={{ color: '#F59E0B' }}>★★★★★</span>
+              <span style={{ fontWeight: '600', color: '#0A2540' }}>{selected.rating}</span>
+              <span className="text-sm" style={{ color: '#64748B' }}>({selected.reviews} avis)</span>
+            </div>
+            <p className="text-xs font-medium" style={{ color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+              Montures disponibles
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '24px' }}>
+              {selected.frames?.map((frame: string) => (
+                <div key={frame} className="text-xs" style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 16px', color: '#0A2540' }}>
+                  {frame}
+                </div>
+              ))}
+            </div>
+            <button style={{ width: '100%', background: '#1E3A8A', color: 'white', padding: '14px', borderRadius: '12px', fontWeight: '600', marginBottom: '8px', border: 'none', cursor: 'pointer' }}>
+              Réserver un essayage
+            </button>
+            <button
+              onClick={() => window.open(`https://maps.google.com/?q=${selected.address}`, '_blank')}
+              style={{ width: '100%', background: 'white', color: '#0A2540', padding: '14px', borderRadius: '12px', fontWeight: '600', border: '1px solid #E2E8F0', cursor: 'pointer' }}
+            >
+              Itinéraire →
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* DESKTOP LAYOUT */}
+      <div className="hidden md:flex" style={{ height: 'calc(100vh - 61px)', overflow: 'hidden' }}>
 
         {/* Left panel — scroll indépendant */}
-        <div style={{ width: '40%', height: '100%', overflowY: 'auto', borderRight: '1px solid #E2E8F0' }}>
+        <div className="w-[40%] h-full overflow-y-auto border-r border-gray-100">
           <div className="px-5 pt-5 pb-4 space-y-4">
 
             {/* Search */}
@@ -622,9 +851,9 @@ export default function OpticiansPage() {
         </div>
 
         {/* Right panel — map fixe */}
-        <div style={{ flex: 1, height: '100%', position: 'relative' }}>
+        <div className="flex-1 h-full relative" style={{ zIndex: 1 }}>
 
-          {/* Leaflet map — always visible */}
+          {/* Leaflet map */}
           <div style={{ height: '100%', width: '100%', position: 'relative', zIndex: 1 }}>
             <LeafletMap opticians={OPTICIANS} onMarkerClick={handleOpticianClick} />
           </div>
@@ -633,16 +862,22 @@ export default function OpticiansPage() {
           {selected && (
             <div style={{
               position: 'fixed',
-              top: '61px',
+              top: 0,
               right: 0,
               width: '380px',
-              height: 'calc(100vh - 61px)',
+              height: '100vh',
               backgroundColor: 'white',
               zIndex: 9999,
               overflowY: 'auto',
               boxShadow: '-4px 0 24px rgba(10,37,64,0.12)',
               padding: '24px'
             }}>
+              <button
+                onClick={() => setSelectedId(null)}
+                className="mb-4 flex items-center gap-2 text-gray-500 text-sm"
+              >
+                ← Retour
+              </button>
               <h2 className="text-2xl font-bold" style={{ color: '#0A2540', marginBottom: '4px' }}>
                 {selected.name}
               </h2>
