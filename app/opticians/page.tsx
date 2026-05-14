@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import noSSR from 'next/dynamic'
 import { useAuth } from '@/app/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
@@ -104,7 +104,12 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
-function MapboxMapInner({ opticians, onMarkerClick }: { opticians: Optician[], onMarkerClick?: (id: number) => void }) {
+function MapboxMapInner({ opticians, onMarkerClick, onMapReady, onLocate }: {
+  opticians: Optician[]
+  onMarkerClick?: (id: number) => void
+  onMapReady?: (map: mapboxgl.Map) => void
+  onLocate?: () => void
+}) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
   const onMarkerClickRef = useRef(onMarkerClick)
@@ -135,13 +140,45 @@ function MapboxMapInner({ opticians, onMarkerClick }: { opticians: Optician[], o
       })
     })
 
+    onMapReady?.(map.current)
+
     return () => {
       map.current?.remove()
       map.current = null
     }
   }, [])
 
-  return <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+      {onLocate && (
+        <button
+          onClick={onLocate}
+          style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            zIndex: 10,
+            background: 'white',
+            border: '1px solid #E2E8F0',
+            borderRadius: '8px',
+            padding: '6px 10px',
+            fontSize: '12px',
+            fontWeight: '500',
+            color: '#0A2540',
+            cursor: 'pointer',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          📍 Me localiser
+        </button>
+      )}
+    </div>
+  )
 }
 
 const LeafletMap = noSSR(
@@ -163,7 +200,29 @@ export default function OpticiansPage() {
   const [showContextDropdown, setShowContextDropdown] = useState(false)
   const [showBanner, setShowBanner] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
   const contextAppliedRef = useRef(false)
+  const mapRef = useRef<mapboxgl.Map | null>(null)
+  const mapRefMobile = useRef<mapboxgl.Map | null>(null)
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { longitude, latitude } = position.coords
+        setUserLocation([longitude, latitude])
+        ;[mapRef.current, mapRefMobile.current].forEach(m => {
+          if (!m) return
+          m.flyTo({ center: [longitude, latitude], zoom: 13, duration: 1500 })
+          new mapboxgl.Marker({ color: '#3B82F6', scale: 0.8 })
+            .setLngLat([longitude, latitude])
+            .addTo(m)
+        })
+      },
+      (error) => { console.log('Erreur:', error.message) },
+      { enableHighAccuracy: false, timeout: 30000, maximumAge: 60000 }
+    )
+  }
 
   console.log('contexts:', contexts)
   console.log('activeContext:', activeContext)
@@ -305,13 +364,37 @@ export default function OpticiansPage() {
   const framesParam = params.get('frames')
   const scanFrames = framesParam ? framesParam.split(',') : []
 
+  const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLng = (lng2 - lng1) * Math.PI / 180
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2)
+    return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 10) / 10
+  }
+
+  const opticiansSorted = useMemo(() => {
+    if (!userLocation) return OPTICIANS
+
+    return [...OPTICIANS]
+      .map(opt => ({
+        ...opt,
+        distance: getDistance(
+          userLocation[1], userLocation[0],
+          opt.lat, opt.lng
+        )
+      }))
+      .sort((a, b) => a.distance - b.distance)
+  }, [userLocation])
+
   const filteredOpticians = activeFilters.length === 0
-    ? OPTICIANS
-    : OPTICIANS.filter(opt =>
+    ? opticiansSorted
+    : opticiansSorted.filter(opt =>
         activeFilters.some(filter => opt.frames.includes(filter))
       )
 
-  const selected = OPTICIANS.find((o) => o.id === selectedId) ?? null
+  const selected = opticiansSorted.find((o) => o.id === selectedId) ?? null
   const userType = (session ? 'user' : null) as 'user' | 'optician' | null
 
   console.log('selectedId:', selectedId, 'selected:', selected)
@@ -513,10 +596,10 @@ export default function OpticiansPage() {
       </div>
 
       {/* MOBILE LAYOUT */}
-      <div className="md:hidden flex flex-col h-screen">
+      <div className="md:hidden flex flex-col" style={{ height: '100dvh' }}>
 
         {/* Header mobile */}
-        <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 z-10">
+        <header className="flex items-center justify-between px-4 bg-white border-b border-gray-100 z-10" style={{ height: '56px', flexShrink: 0 }}>
           <span className="text-lg font-bold text-[#0A2540]">Oculis</span>
           <div className="flex gap-2">
             {session ? (
@@ -598,13 +681,18 @@ export default function OpticiansPage() {
           )}
         </header>
 
-        {/* Map fullscreen */}
-        <div className="flex-1 relative" style={{ zIndex: 1 }}>
-          <LeafletMap opticians={OPTICIANS} onMarkerClick={handleOpticianClick} />
+        {/* Map */}
+        <div style={{ flex: 1, position: 'relative', zIndex: 1, minHeight: 0 }}>
+          <LeafletMap opticians={opticiansSorted} onMarkerClick={handleOpticianClick} onMapReady={(m) => { mapRefMobile.current = m }} onLocate={requestLocation} />
         </div>
 
         {/* Bottom sheet */}
-        <div className="bg-white border-t border-gray-100 max-h-[45vh] overflow-y-auto">
+        <div style={{ height: '260px', flexShrink: 0, background: 'white', borderRadius: '20px 20px 0 0', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', overflowY: 'auto' }}>
+          {!userLocation && (
+            <div className="bg-blue-50 border-b border-blue-100 px-4 py-2 text-xs text-blue-700 text-center">
+              📍 Autorise la géolocalisation pour voir les opticiens près de toi
+            </div>
+          )}
           {/* Filter pills */}
           <div className="px-4 pt-3 pb-2 flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
             {FRAME_FILTERS.map(f => (
@@ -731,6 +819,11 @@ export default function OpticiansPage() {
 
         {/* Left panel — scroll indépendant */}
         <div className="w-[40%] h-full overflow-y-auto border-r border-gray-100">
+          {!userLocation && (
+            <div className="bg-blue-50 border-b border-blue-100 px-5 py-2 text-xs text-blue-700 text-center">
+              📍 Autorise la géolocalisation pour voir les opticiens près de toi
+            </div>
+          )}
           <div className="px-5 pt-5 pb-4 space-y-4">
 
             {/* Search */}
@@ -841,9 +934,9 @@ export default function OpticiansPage() {
         {/* Right panel — map fixe */}
         <div className="flex-1 h-full relative" style={{ zIndex: 1 }}>
 
-          {/* Leaflet map */}
+          {/* Mapbox map */}
           <div style={{ height: '100%', width: '100%', position: 'relative', zIndex: 1 }}>
-            <LeafletMap opticians={OPTICIANS} onMarkerClick={handleOpticianClick} />
+            <LeafletMap opticians={opticiansSorted} onMarkerClick={handleOpticianClick} onMapReady={(m) => { mapRef.current = m }} onLocate={requestLocation} />
           </div>
 
           {/* Detail drawer — overlays map */}
