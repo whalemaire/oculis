@@ -8,6 +8,8 @@ import noSSR from 'next/dynamic'
 import { useAuth } from '@/app/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import { getRecommendations } from '@/lib/recommendationEngine'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 
 const OPTICIANS = [
   {
@@ -102,9 +104,9 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
-function LeafletMapInner({ opticians, onMarkerClick }: { opticians: Optician[], onMarkerClick?: (id: number) => void }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<any>(null)
+function MapboxMapInner({ opticians, onMarkerClick }: { opticians: Optician[], onMarkerClick?: (id: number) => void }) {
+  const mapContainer = useRef<HTMLDivElement>(null)
+  const map = useRef<mapboxgl.Map | null>(null)
   const onMarkerClickRef = useRef(onMarkerClick)
 
   useEffect(() => {
@@ -112,52 +114,38 @@ function LeafletMapInner({ opticians, onMarkerClick }: { opticians: Optician[], 
   }, [onMarkerClick])
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return
+    if (map.current || !mapContainer.current) return
 
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-    document.head.appendChild(link)
+    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const L = require('leaflet') as typeof import('leaflet')
-
-    // Fix webpack-broken default icon paths
-    delete (L.Icon.Default.prototype as any)._getIconUrl
-    L.Icon.Default.mergeOptions({
-      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/light-v11',
+      center: [2.3522, 48.8566],
+      zoom: 12,
     })
-
-    const map = L.map(containerRef.current).setView([48.8566, 2.3522], 13)
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map)
 
     opticians.forEach((opt) => {
-      L.marker([opt.lat, opt.lng])
-        .addTo(map)
-        .bindPopup(`<b>${opt.name}</b><br/>${opt.address}`)
-        .on('click', () => onMarkerClickRef.current?.(opt.id))
+      const marker = new mapboxgl.Marker({ color: '#1E3A8A' })
+        .setLngLat([opt.lng, opt.lat])
+        .addTo(map.current!)
+
+      marker.getElement().addEventListener('click', () => {
+        onMarkerClickRef.current?.(opt.id)
+      })
     })
 
-    mapRef.current = map
-
     return () => {
-      mapRef.current?.remove()
-      mapRef.current = null
-      document.head.removeChild(link)
+      map.current?.remove()
+      map.current = null
     }
   }, [])
 
-  return <div ref={containerRef} className="w-full h-full" />
+  return <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
 }
 
 const LeafletMap = noSSR(
-  () => Promise.resolve({ default: LeafletMapInner }),
+  () => Promise.resolve({ default: MapboxMapInner }),
   { ssr: false }
 )
 
