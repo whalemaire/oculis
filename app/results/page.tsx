@@ -8,6 +8,7 @@ import { useAuth } from '@/app/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import { getRecommendations } from '@/lib/recommendationEngine'
 import { getTopFrames } from '@/lib/frameScoring'
+import { FiglaLogo } from '@/app/components/FiglaLogo'
 
 const SVG_RECT = (
   <svg width="96" height="40" viewBox="0 0 96 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -322,7 +323,7 @@ export default function ResultsPage() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 sticky top-0 z-10">
         <button onClick={() => router.back()} className="text-gray-400 text-sm">←</button>
-        <span className="font-bold text-[#0A2540]">Oculis</span>
+        <FiglaLogo size={22} />
         <button onClick={() => router.push('/profile')} className="text-gray-400 text-sm">👤</button>
       </header>
 
@@ -330,15 +331,15 @@ export default function ResultsPage() {
 
         {/* Completion banner — non connecté (30%) */}
         {!session && from !== 'profile' && (
-          <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
+          <div style={{ background: '#FFF4D6', border: '1px solid #F59E0B', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <p style={{ color: '#92400E', fontWeight: '600', fontSize: '14px', margin: 0 }}>Profil complété à 30%</p>
+              <p style={{ color: '#8A6300', fontWeight: '600', fontSize: '14px', margin: 0 }}>Profil complété à 30%</p>
               <span style={{ background: '#F59E0B', color: 'white', borderRadius: '100px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>30%</span>
             </div>
             <div style={{ background: '#FDE68A', borderRadius: '100px', height: '6px', marginBottom: '12px' }}>
               <div style={{ background: '#F59E0B', borderRadius: '100px', height: '6px', width: '30%', transition: 'width 0.5s ease' }}/>
             </div>
-            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: '#92400E' }}>
+            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: '#8A6300' }}>
               <span>✅ Scan fait</span>
               <span style={{ color: '#D97706' }}>·</span>
               <span>⬜ Compte créé</span>
@@ -350,15 +351,15 @@ export default function ResultsPage() {
 
         {/* Completion banner — connecté sans contexte (50%) */}
         {session && !hasContext && from !== 'profile' && (
-          <div style={{ background: '#EEF2FF', border: '1px solid #1E3A8A', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
+          <div style={{ background: '#EEF2FF', border: '1px solid #102A72', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <p style={{ color: '#1E3A8A', fontWeight: '600', fontSize: '14px', margin: 0 }}>Profil complété à 50%</p>
-              <span style={{ background: '#1E3A8A', color: 'white', borderRadius: '100px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>50%</span>
+              <p style={{ color: '#102A72', fontWeight: '600', fontSize: '14px', margin: 0 }}>Profil complété à 50%</p>
+              <span style={{ background: '#102A72', color: 'white', borderRadius: '100px', padding: '2px 10px', fontSize: '12px', fontWeight: '600' }}>50%</span>
             </div>
             <div style={{ background: '#C7D2FE', borderRadius: '100px', height: '6px', marginBottom: '12px' }}>
-              <div style={{ background: '#1E3A8A', borderRadius: '100px', height: '6px', width: '50%', transition: 'width 0.5s ease' }}/>
+              <div style={{ background: '#102A72', borderRadius: '100px', height: '6px', width: '50%', transition: 'width 0.5s ease' }}/>
             </div>
-            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: '#1E3A8A' }}>
+            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', color: '#102A72' }}>
               <span>✅ Scan fait</span>
               <span>·</span>
               <span>✅ Compte créé</span>
@@ -370,10 +371,10 @@ export default function ResultsPage() {
 
         {/* Section 1 — Forme du visage */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col items-center text-center gap-3">
-          <span className="bg-[#1E3A8A] text-white text-xs font-bold px-4 py-1.5 rounded-full tracking-wide">
+          <span className="bg-[#102A72] text-white text-xs font-bold px-4 py-1.5 rounded-full tracking-wide">
             {shapeLabel}
           </span>
-          <p className="text-6xl font-extrabold text-[#1E3A8A] leading-none">{confidence}%</p>
+          <p className="text-6xl font-extrabold text-[#102A72] leading-none">{confidence}%</p>
           <p className="text-sm text-gray-400">Basé sur 106 points de détection</p>
 
           {/* Landmark pills */}
@@ -404,7 +405,7 @@ export default function ResultsPage() {
                   <p className="text-xs font-bold text-[#0A2540] leading-tight">{celeb.name}</p>
                   <p className="text-[11px] text-gray-400 mt-0.5">{celeb.profession}</p>
                 </div>
-                <span className="text-[10px] font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-semibold bg-[#E6EEFF] text-[#102A72] px-2 py-0.5 rounded-full">
                   Même forme
                 </span>
               </div>
@@ -478,7 +479,7 @@ export default function ResultsPage() {
             {topFrames.map((frame) => (
               <div key={frame.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <div className="bg-gray-50 p-8 flex items-center justify-center relative">
-                  <span className="absolute top-3 right-3 bg-[#1E3A8A] text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                  <span className="absolute top-3 right-3 bg-[#102A72] text-white text-xs font-bold px-2.5 py-1 rounded-full">
                     {frame.score}%
                   </span>
                   {framesvg(frame.style)}
@@ -493,13 +494,13 @@ export default function ResultsPage() {
                   <p className="text-xs text-gray-400 mb-2">{frame.material} · {frame.weight_grams}g · {frame.price_range}</p>
                   <div className="w-full h-1.5 bg-gray-100 rounded-full mb-3">
                     <div
-                      className="h-1.5 bg-[#1E3A8A] rounded-full"
+                      className="h-1.5 bg-[#102A72] rounded-full"
                       style={{ width: `${frame.score}%` }}
                     />
                   </div>
                   <div className="flex flex-wrap gap-1 mb-3">
                     {frame.style_tags.slice(0, 3).map((tag: string) => (
-                      <span key={tag} className="text-[10px] border border-[#1E3A8A] text-[#1E3A8A] px-2 py-0.5 rounded-full">
+                      <span key={tag} className="text-[10px] border border-[#102A72] text-[#102A72] px-2 py-0.5 rounded-full">
                         {tag}
                       </span>
                     ))}
@@ -539,7 +540,7 @@ export default function ResultsPage() {
             <>
               <button
                 onClick={() => router.push('/register')}
-                className="w-full bg-[#1E3A8A] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
+                className="w-full bg-[#102A72] text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-[#162d6b] transition-colors"
               >
                 Créer un contexte pour affiner →
               </button>
@@ -562,7 +563,7 @@ export default function ResultsPage() {
                       .join(',')
                     router.push(`/opticians?contextId=${contextId || ''}&frames=${encodeURIComponent(frameStyles)}`)
                   }}
-                  className="w-full bg-[#1E3A8A] text-white py-4 rounded-xl font-semibold text-base"
+                  className="w-full bg-[#102A72] text-white py-4 rounded-xl font-semibold text-base"
                 >
                   Voir les opticiens →
                 </button>
@@ -570,7 +571,7 @@ export default function ResultsPage() {
               {session && !hasContext && (
                 <button
                   onClick={() => router.push('/contexts/new')}
-                  className="w-full bg-[#1E3A8A] text-white py-4 rounded-xl font-semibold text-base"
+                  className="w-full bg-[#102A72] text-white py-4 rounded-xl font-semibold text-base"
                 >
                   Créer un contexte pour affiner →
                 </button>

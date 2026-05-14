@@ -8,6 +8,7 @@ import noSSR from 'next/dynamic'
 import { useAuth } from '@/app/components/AuthProvider'
 import { supabase } from '@/lib/supabase'
 import { getRecommendations } from '@/lib/recommendationEngine'
+import { FiglaLogo } from '@/app/components/FiglaLogo'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
@@ -131,7 +132,7 @@ function MapboxMapInner({ opticians, onMarkerClick, onMapReady, onLocate }: {
     })
 
     opticians.forEach((opt) => {
-      const marker = new mapboxgl.Marker({ color: '#1E3A8A' })
+      const marker = new mapboxgl.Marker({ color: '#102A72' })
         .setLngLat([opt.lng, opt.lat])
         .addTo(map.current!)
 
@@ -421,7 +422,7 @@ export default function OpticiansPage() {
     <main className="min-h-screen bg-surface flex flex-col">
       {/* Header — desktop only */}
       <header className="hidden md:flex items-center justify-between px-6 py-3.5 border-b border-border bg-white z-10 relative">
-        <span className="text-xl font-bold text-primary">Oculis</span>
+        <FiglaLogo size={26} />
         <div className="flex items-center gap-2">
           {userType === null && (
             <>
@@ -459,7 +460,7 @@ export default function OpticiansPage() {
                   {/* Mobile — icône compacte */}
                   <button
                     onClick={() => setShowContextDropdown(!showContextDropdown)}
-                    className="md:hidden bg-[#1E3A8A] text-white p-2 rounded-full text-sm"
+                    className="md:hidden bg-[#102A72] text-white p-2 rounded-full text-sm"
                   >
                     {USAGE_EMOJI[activeContext?.usage] ?? '🎯'}
                   </button>
@@ -503,14 +504,14 @@ export default function OpticiansPage() {
                             <span style={{ color: '#0A2540', fontWeight: '500' }}>{ctx.name}</span>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               {ctx.name === 'Mon profil de base' && <span style={{ fontSize: '12px' }}>🔒</span>}
-                              {activeContext?.id === ctx.id && <span style={{ color: '#1E3A8A' }}>✓</span>}
+                              {activeContext?.id === ctx.id && <span style={{ color: '#102A72' }}>✓</span>}
                             </span>
                           </button>
                         ))}
                         <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '4px', paddingTop: '4px' }}>
                           <button
                             onClick={() => { setShowContextDropdown(false); router.push('/contexts/new') }}
-                            style={{ width: '100%', padding: '10px 16px', fontSize: '14px', color: '#1E3A8A', fontWeight: '500', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                            style={{ width: '100%', padding: '10px 16px', fontSize: '14px', color: '#102A72', fontWeight: '500', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                           >
                             + Nouveau contexte
                           </button>
@@ -549,7 +550,7 @@ export default function OpticiansPage() {
       <div className="hidden md:block">
         {!session && (
           <div style={{
-            background: 'linear-gradient(135deg, #0A2540 0%, #1E3A8A 100%)',
+            background: 'linear-gradient(135deg, #0A2540 0%, #102A72 100%)',
             padding: '14px 24px',
             display: 'flex',
             alignItems: 'center',
@@ -600,13 +601,13 @@ export default function OpticiansPage() {
 
         {/* Header mobile */}
         <header className="flex items-center justify-between px-4 bg-white border-b border-gray-100 z-10" style={{ height: '56px', flexShrink: 0 }}>
-          <span className="text-lg font-bold text-[#0A2540]">Oculis</span>
+          <FiglaLogo size={22} />
           <div className="flex gap-2">
             {session ? (
               <>
                 <button
                   onClick={() => setShowContextDropdown(!showContextDropdown)}
-                  className="bg-[#EEF2FF] text-[#1E3A8A] px-3 py-1.5 rounded-full text-xs font-medium"
+                  className="bg-[#E6EEFF] text-[#102A72] px-3 py-1.5 rounded-full text-xs font-medium"
                 >
                   🎯 {activeContext?.name || 'Contexte'}
                 </button>
@@ -621,13 +622,13 @@ export default function OpticiansPage() {
               <>
                 <button
                   onClick={() => router.push('/scan')}
-                  className="bg-[#1E3A8A] text-white px-3 py-1.5 rounded-full text-xs font-medium"
+                  className="bg-[#102A72] text-white px-3 py-1.5 rounded-full text-xs font-medium"
                 >
                   📷 Scan
                 </button>
                 <button
                   onClick={() => router.push('/login')}
-                  className="border border-[#1E3A8A] text-[#1E3A8A] px-3 py-1.5 rounded-full text-xs font-medium"
+                  className="border border-[#102A72] text-[#102A72] px-3 py-1.5 rounded-full text-xs font-medium"
                 >
                   Se connecter
                 </button>
@@ -664,14 +665,14 @@ export default function OpticiansPage() {
                     <span style={{ color: '#0A2540', fontWeight: '500' }}>{ctx.name}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {ctx.name === 'Mon profil de base' && <span style={{ fontSize: '12px' }}>🔒</span>}
-                      {activeContext?.id === ctx.id && <span style={{ color: '#1E3A8A' }}>✓</span>}
+                      {activeContext?.id === ctx.id && <span style={{ color: '#102A72' }}>✓</span>}
                     </span>
                   </button>
                 ))}
                 <div style={{ borderTop: '1px solid #E2E8F0', marginTop: '4px', paddingTop: '4px' }}>
                   <button
                     onClick={() => { setShowContextDropdown(false); router.push('/contexts/new') }}
-                    style={{ width: '100%', padding: '10px 16px', fontSize: '14px', color: '#1E3A8A', fontWeight: '500', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                    style={{ width: '100%', padding: '10px 16px', fontSize: '14px', color: '#102A72', fontWeight: '500', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
                   >
                     + Nouveau contexte
                   </button>
@@ -706,9 +707,9 @@ export default function OpticiansPage() {
                 }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all border ${
                   activeFilters.includes(f)
-                    ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                    ? 'bg-[#102A72] text-white border-[#102A72]'
                     : f === 'All' && activeFilters.length === 0
-                    ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                    ? 'bg-[#102A72] text-white border-[#102A72]'
                     : 'bg-white text-gray-600 border-gray-200'
                 }`}
               >
@@ -776,7 +777,7 @@ export default function OpticiansPage() {
               {selected.address} · {selected.distance}
             </p>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-              <span className="text-xs font-medium" style={{ background: '#EEF2FF', color: '#1E3A8A', padding: '4px 12px', borderRadius: '100px' }}>
+              <span className="text-xs font-medium" style={{ background: '#E6EEFF', color: '#102A72', padding: '4px 12px', borderRadius: '100px' }}>
                 ✓ Perfect match
               </span>
               <span className="text-xs font-medium" style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 12px', borderRadius: '100px' }}>
@@ -801,7 +802,7 @@ export default function OpticiansPage() {
                 </div>
               ))}
             </div>
-            <button style={{ width: '100%', background: '#1E3A8A', color: 'white', padding: '14px', borderRadius: '12px', fontWeight: '600', marginBottom: '8px', border: 'none', cursor: 'pointer' }}>
+            <button style={{ width: '100%', background: '#102A72', color: 'white', padding: '14px', borderRadius: '12px', fontWeight: '600', marginBottom: '8px', border: 'none', cursor: 'pointer' }}>
               Réserver un essayage
             </button>
             <button
@@ -843,7 +844,7 @@ export default function OpticiansPage() {
                 </p>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center gap-1.5 text-sm font-medium text-[#1E3A8A] border border-[#1E3A8A] px-3 py-1.5 rounded-full"
+                  className="flex items-center gap-1.5 text-sm font-medium text-[#102A72] border border-[#102A72] px-3 py-1.5 rounded-full"
                 >
                   🔧 Filtres {showFilters ? '▲' : '▼'}
                 </button>
@@ -862,10 +863,10 @@ export default function OpticiansPage() {
                       }}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
                         activeFilters.includes(f)
-                          ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                          ? 'bg-[#102A72] text-white border-[#102A72]'
                           : f === 'All' && activeFilters.length === 0
-                          ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-[#1E3A8A]'
+                          ? 'bg-[#102A72] text-white border-[#102A72]'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-[#102A72]'
                       }`}
                     >
                       {f}
@@ -967,7 +968,7 @@ export default function OpticiansPage() {
               </p>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                <span className="text-xs font-medium" style={{ background: '#EEF2FF', color: '#1E3A8A', padding: '4px 12px', borderRadius: '100px' }}>
+                <span className="text-xs font-medium" style={{ background: '#E6EEFF', color: '#102A72', padding: '4px 12px', borderRadius: '100px' }}>
                   ✓ Perfect match
                 </span>
                 <span className="text-xs font-medium" style={{ background: '#D1FAE5', color: '#065F46', padding: '4px 12px', borderRadius: '100px' }}>
@@ -995,7 +996,7 @@ export default function OpticiansPage() {
                 ))}
               </div>
 
-              <button style={{ width: '100%', background: '#1E3A8A', color: 'white', padding: '14px', borderRadius: '12px', fontWeight: '600', marginBottom: '8px', border: 'none', cursor: 'pointer' }}>
+              <button style={{ width: '100%', background: '#102A72', color: 'white', padding: '14px', borderRadius: '12px', fontWeight: '600', marginBottom: '8px', border: 'none', cursor: 'pointer' }}>
                 Reserve a fitting
               </button>
               <button

@@ -1,26 +1,21 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from './components/AuthProvider'
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'Oculis — Trouvez vos lunettes parfaites',
-  description: 'Oculis scanne votre visage pour recommander les montures adaptées à votre morphologie et vous géolocalise l\'opticien le plus proche avec votre paire en stock.',
+  title: 'Figla — Trouvez vos lunettes parfaites',
+  description: "Figla scanne votre visage pour recommander les montures adaptées à votre morphologie et vous géolocalise l'opticien le plus proche avec votre paire en stock.",
   keywords: 'lunettes, opticien, scan visage, recommandation montures, forme visage',
   openGraph: {
-    title: 'Oculis — Trouvez vos lunettes parfaites',
+    title: 'Figla — Trouvez vos lunettes parfaites',
     description: 'Scannez votre visage et trouvez vos lunettes idéales près de chez vous.',
     type: 'website',
   },
@@ -32,10 +27,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="fr">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+      </head>
+      <body className={`${inter.variable} antialiased`}>
         <AuthProvider><Suspense fallback={null}>{children}</Suspense></AuthProvider>
       </body>
     </html>
