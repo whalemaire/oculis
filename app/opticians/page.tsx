@@ -313,16 +313,21 @@ export default function OpticiansPage() {
       .then(({ data }) => {
         const scanData = data?.[0]
         if (scanData) {
-          const scanWithProbs = {
-            ...scanData,
-            shape_probabilities: scanData.shape_probabilities
-              ? JSON.parse(scanData.shape_probabilities)
-              : undefined,
-            top_shapes: scanData.top_shapes
-              ? JSON.parse(scanData.top_shapes)
-              : undefined,
-          }
-          const recs = getRecommendations(scanWithProbs, ctx, feedbackList, contextIdFromUrl || undefined)
+          const recs = getRecommendations(
+            {
+              ...scanData,
+              shape_probabilities: scanData.shape_probabilities
+                ? JSON.parse(scanData.shape_probabilities)
+                : undefined,
+              gender: scanData.gender,
+              age: scanData.age,
+            },
+            ctx,
+            feedbackList,
+            ctx.id
+          )
+          console.log('recs from engine:', recs)
+          console.log('scanData used:', { gender: scanData?.gender, shape: scanData?.face_shape })
           const frameNames = recs
             .map(r => r.name)
             .filter((v, i, a) => a.indexOf(v) === i)
@@ -356,16 +361,21 @@ export default function OpticiansPage() {
     const scanData = scanArray?.[0]
 
     if (scanData && newActive) {
-      const scanWithProbs = {
-        ...scanData,
-        shape_probabilities: scanData.shape_probabilities
-          ? JSON.parse(scanData.shape_probabilities)
-          : undefined,
-        top_shapes: scanData.top_shapes
-          ? JSON.parse(scanData.top_shapes)
-          : undefined,
-      }
-      const recs = getRecommendations(scanWithProbs, newActive, feedbackList, contextId || undefined)
+      const recs = getRecommendations(
+        {
+          ...scanData,
+          shape_probabilities: scanData.shape_probabilities
+            ? JSON.parse(scanData.shape_probabilities)
+            : undefined,
+          gender: scanData.gender,
+          age: scanData.age,
+        },
+        newActive,
+        feedbackList,
+        newActive.id
+      )
+      console.log('recs from engine:', recs)
+      console.log('scanData used:', { gender: scanData?.gender, shape: scanData?.face_shape })
       const frameNames = recs
         .map(r => r.name)
         .filter((v, i, a) => a.indexOf(v) === i)

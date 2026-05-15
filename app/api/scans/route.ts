@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       .from('context')
       .update({
         name: 'Mon profil de base',
-        style: face_shape,
+        style: null,
       })
       .eq('user_id', user_id)
       .eq('name', 'Mon profil de base')

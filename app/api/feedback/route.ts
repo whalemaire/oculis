@@ -7,7 +7,16 @@ const supabase = createClient(
 )
 
 export async function POST(request: Request) {
-  const { user_id, frame_id, frame_style, signal_type, context_id } = await request.json()
+  const body = await request.json()
+  console.log('Feedback POST body:', JSON.stringify(body))
+
+  const { user_id, frame_id, frame_style, signal_type, context_id } = body
+  console.log('Extracted fields:', { user_id, frame_id, frame_style, signal_type })
+
+  if (!user_id || !frame_style || !signal_type) {
+    console.log('Missing fields:', { user_id: !!user_id, frame_style: !!frame_style, signal_type: !!signal_type })
+    return NextResponse.json({ error: 'missing fields', received: body }, { status: 400 })
+  }
 
   const weight = signal_type === 'like' ? 2.0
     : signal_type === 'dislike' ? -2.0

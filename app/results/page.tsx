@@ -122,6 +122,9 @@ export default function ResultsPage() {
     from: params.get('from'),
     fullUrl: typeof window !== 'undefined' ? window.location.href : 'SSR'
   })
+  const from = params.get('from')
+  const contextId = params.get('contextId')
+
   const [showToast, setShowToast] = useState(false)
   const [recommendations, setRecommendations] = useState<any[]>([])
   const [activeContext, setActiveContext] = useState<any>(null)
@@ -146,19 +149,21 @@ export default function ResultsPage() {
 
   useEffect(() => {
     if (!session?.user?.id) return
-    const loadFeedbacks = async () => {
-      const { data: feedbackData } = await supabase
-        .from('feedback')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-      const map: Record<string, string> = {}
-      feedbackData?.forEach((f: any) => { map[f.frame_id] = f.signal_type })
-      setFeedbacks(map)
-      setFeedbackList(feedbackData || [])
-    }
-    loadFeedbacks()
-  }, [session])
+    fetch(`/api/feedback?user_id=${session.user.id}`)
+      .then(r => r.json())
+      .then(({ feedbacks: data }) => {
+        const map: Record<string, string> = {}
+        data?.forEach((f: any) => { map[f.frame_id || f.frame_style] = f.signal_type })
+        setFeedbacks(map)
+        setFeedbackList(data || [])
+        console.log('feedbackList loaded:', data?.length, 'feedbacks')
+        console.log('feedbackList:', data)
+        if (scanData && activeContext) {
+          const frames = getTopFrames(scanData, activeContext, 6)
+          setTopFrames(frames)
+        }
+      })
+  }, [session, from])
 
   // Initialise l'ordre une seule fois
   useEffect(() => {
@@ -187,18 +192,29 @@ export default function ResultsPage() {
       frame_style: frameStyle,
       signal_type: signalType,
       weight: signalType === 'like' ? 2.0 : -2.0,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      context_id: contextId || null,
     }
 
     const updatedList = [
-      ...feedbackList.filter(f => f.frame_id !== frameId),
+      ...feedbackList.filter(f => f.frame_id !== frameId && f.frame_style !== frameStyle),
       newFeedback
     ]
     setFeedbackList(updatedList)
+    console.log('feedbackList updated:', updatedList.length, 'feedbacks')
 
     if (scanData && activeContext) {
-      const recs = getRecommendations(scanData, activeContext, updatedList, contextId || undefined)
-      setRecommendations(recs)
+      const shapeProbs = scanData.shape_probabilities
+        ? (typeof scanData.shape_probabilities === 'string'
+          ? JSON.parse(scanData.shape_probabilities)
+          : scanData.shape_probabilities)
+        : undefined
+      const frames = getTopFrames(
+        { ...scanData, shape_probabilities: shapeProbs },
+        activeContext,
+        6
+      )
+      setTopFrames(frames)
     }
 
     setHasFeedback(true)
@@ -223,8 +239,6 @@ export default function ResultsPage() {
     })
   }
 
-  const from = params.get('from')
-  const contextId = params.get('contextId')
   const shape = params.get('shape') ?? 'oval'
   const confidence = params.get('confidence') ?? '85'
   const ipd = params.get('ipd') ?? '64'
@@ -279,10 +293,14 @@ export default function ResultsPage() {
         const scanWithProbs = {
           ...scan,
           shape_probabilities: scan.shape_probabilities
-            ? JSON.parse(scan.shape_probabilities)
+            ? (typeof scan.shape_probabilities === 'string'
+              ? JSON.parse(scan.shape_probabilities)
+              : scan.shape_probabilities)
             : undefined,
           top_shapes: scan.top_shapes
-            ? JSON.parse(scan.top_shapes)
+            ? (typeof scan.top_shapes === 'string'
+              ? JSON.parse(scan.top_shapes)
+              : scan.top_shapes)
             : undefined,
         }
         const frames = getTopFrames(

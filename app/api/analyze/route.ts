@@ -66,53 +66,57 @@ export async function POST(request: Request) {
     oblong: 0,
   }
 
-  // --- Oval ---
-  if (ratioHeightWidth >= 1.10 && ratioHeightWidth <= 1.40) shapeScores.oval += 30
-  if (ratioJawForehead >= 0.85 && ratioJawForehead <= 1.05) shapeScores.oval += 25
-  if (ratioCheekJaw >= 1.0 && ratioCheekJaw <= 1.15) shapeScores.oval += 25
-  if (ratioForeheadFace >= 0.75 && ratioForeheadFace <= 0.95) shapeScores.oval += 20
+  // --- OVAL (35% population) ---
+  // Visage équilibré, légèrement allongé, pommettes légèrement > mâchoire
+  if (ratioHeightWidth >= 1.05 && ratioHeightWidth <= 1.45) shapeScores.oval += 35
+  if (ratioJawForehead >= 0.80 && ratioJawForehead <= 1.10) shapeScores.oval += 25
+  if (ratioCheekJaw >= 0.95 && ratioCheekJaw <= 1.20) shapeScores.oval += 25
+  if (ratioForeheadFace >= 0.70 && ratioForeheadFace <= 0.95) shapeScores.oval += 15
 
-  // --- Round ---
-  if (ratioHeightWidth < 1.10) shapeScores.round += 35
-  if (ratioCheekJaw > 1.10) shapeScores.round += 30
-  if (ratioJawForehead < 0.90) shapeScores.round += 20
-  if (ratioHeightWidth < 1.05) shapeScores.round += 15
+  // --- ROUND (20% population) ---
+  // Visage aussi large que haut, pommettes très saillantes
+  if (ratioHeightWidth < 1.05) shapeScores.round += 40
+  if (ratioHeightWidth < 1.0) shapeScores.round += 20
+  if (ratioCheekJaw > 1.15) shapeScores.round += 25
+  if (ratioJawForehead < 0.85) shapeScores.round += 15
 
-  // --- Square ---
-  if (ratioJawForehead > 1.05) shapeScores.square += 30
-  if (ratioHeightWidth < 1.20) shapeScores.square += 25
-  if (ratioCheekJaw < 0.90) shapeScores.square += 25
-  if (ratioJawForehead > 1.15) shapeScores.square += 20
+  // --- SQUARE (15% population) ---
+  // Critères STRICTS : mâchoire très large + visage court + tout à la même largeur
+  if (ratioJawForehead > 1.15) shapeScores.square += 30
+  if (ratioHeightWidth < 1.15) shapeScores.square += 25
+  if (ratioCheekJaw < 0.88) shapeScores.square += 25
+  if (ratioJawForehead > 1.20 && ratioHeightWidth < 1.10) shapeScores.square += 20
 
-  // --- Heart ---
-  if (ratioForeheadFace > 0.90) shapeScores.heart += 30
-  if (ratioJawForehead < 0.80) shapeScores.heart += 35
-  if (ratioCheekJaw > 1.15) shapeScores.heart += 20
+  // --- HEART (15% population) ---
+  // Front large, mâchoire étroite, menton pointu
+  if (ratioForeheadFace > 0.88) shapeScores.heart += 30
+  if (ratioJawForehead < 0.82) shapeScores.heart += 35
+  if (ratioCheekJaw > 1.10) shapeScores.heart += 20
   if (ratioJawForehead < 0.75) shapeScores.heart += 15
 
-  // --- Oblong ---
-  if (ratioHeightWidth > 1.40) shapeScores.oblong += 40
-  if (ratioJawForehead >= 0.85 && ratioJawForehead <= 1.10) shapeScores.oblong += 25
-  if (ratioHeightWidth > 1.50) shapeScores.oblong += 20
-  if (ratioCheekJaw >= 0.90 && ratioCheekJaw <= 1.10) shapeScores.oblong += 15
+  // --- OBLONG (10% population) ---
+  // Très allongé, proportions stables en largeur
+  if (ratioHeightWidth > 1.45) shapeScores.oblong += 45
+  if (ratioHeightWidth > 1.55) shapeScores.oblong += 25
+  if (ratioJawForehead >= 0.85 && ratioJawForehead <= 1.10) shapeScores.oblong += 20
+  if (ratioCheekJaw >= 0.90 && ratioCheekJaw <= 1.10) shapeScores.oblong += 10
 
-  // --- Pénalités croisées ---
+  // Pénalités croisées
   if (ratioHeightWidth > 1.25) {
-    shapeScores.square = Math.round(shapeScores.square * 0.3)
-    shapeScores.oval += 15
-    shapeScores.oblong += 10
+    shapeScores.square = Math.round(shapeScores.square * 0.25)
+    shapeScores.oval += 20
   }
   if (ratioHeightWidth < 1.10) {
     shapeScores.oblong = Math.round(shapeScores.oblong * 0.2)
     shapeScores.round += 15
   }
   if (ratioCheekJaw > 1.05) {
-    shapeScores.square = Math.round(shapeScores.square * 0.5)
-    shapeScores.oval += 10
-    shapeScores.round += 10
+    shapeScores.square = Math.round(shapeScores.square * 0.4)
+    shapeScores.oval += 12
+    shapeScores.round += 8
   }
   if (ratioJawForehead > 1.15 && ratioHeightWidth < 1.15) {
-    shapeScores.square += 20
+    shapeScores.square += 25
   }
   if (ratioJawForehead < 0.78) {
     shapeScores.heart += 20
