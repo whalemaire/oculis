@@ -7,7 +7,7 @@ const supabase = createClient(
 )
 
 export async function POST(request: Request) {
-  const { user_id, frame_style, signal_type, context_id } = await request.json()
+  const { user_id, frame_id, frame_style, signal_type, context_id } = await request.json()
 
   const weight = signal_type === 'like' ? 2.0
     : signal_type === 'dislike' ? -2.0
@@ -19,12 +19,12 @@ export async function POST(request: Request) {
     .from('feedback')
     .delete()
     .eq('user_id', user_id)
-    .eq('frame_style', frame_style)
+    .eq('frame_id', frame_id)
 
   // Insère le nouveau feedback
   const { data, error } = await supabase
     .from('feedback')
-    .insert([{ user_id, frame_style, signal_type, weight, context_id }])
+    .insert([{ user_id, frame_id, frame_style, signal_type, weight, context_id }])
     .select()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

@@ -124,7 +124,7 @@ export default function ScanPage() {
       if (from === 'profile') {
         router.push('/profile?updated=true')
       } else {
-        router.push(`/results?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.measurements?.ipd ?? data.ipd}&ratio=${data.ratios?.heightWidth ?? data.ratio}&gender=${data.gender}`)
+        router.push(`/discovery?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.measurements?.ipd ?? data.ipd}&ratio=${data.ratios?.heightWidth ?? data.ratio}&gender=${data.gender}`)
       }
     } catch {
       setError('Une erreur est survenue — réessaie')

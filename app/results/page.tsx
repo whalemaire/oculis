@@ -146,14 +146,18 @@ export default function ResultsPage() {
 
   useEffect(() => {
     if (!session?.user?.id) return
-    fetch(`/api/feedback?user_id=${session.user.id}`)
-      .then(r => r.json())
-      .then(({ feedbacks: data }) => {
-        const map: Record<string, string> = {}
-        data?.forEach((f: any) => { map[f.frame_style] = f.signal_type })
-        setFeedbacks(map)
-        setFeedbackList(data || [])
-      })
+    const loadFeedbacks = async () => {
+      const { data: feedbackData } = await supabase
+        .from('feedback')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+      const map: Record<string, string> = {}
+      feedbackData?.forEach((f: any) => { map[f.frame_id] = f.signal_type })
+      setFeedbacks(map)
+      setFeedbackList(feedbackData || [])
+    }
+    loadFeedbacks()
   }, [session])
 
   // Initialise l'ordre une seule fois
@@ -173,28 +177,28 @@ export default function ResultsPage() {
     }
   }, [recommendations])
 
-  const sendFeedback = async (frameName: string, signalType: 'like' | 'dislike') => {
+  const sendFeedback = async (frameId: string, frameStyle: string, signalType: 'like' | 'dislike') => {
     if (!session?.user?.id) return
 
-    setFeedbacks(prev => ({ ...prev, [frameName]: signalType }))
+    setFeedbacks(prev => ({ ...prev, [frameId]: signalType }))
 
     const newFeedback = {
-      frame_style: frameName,
+      frame_id: frameId,
+      frame_style: frameStyle,
       signal_type: signalType,
       weight: signalType === 'like' ? 2.0 : -2.0,
       created_at: new Date().toISOString()
     }
 
     const updatedList = [
-      ...feedbackList.filter(f => f.frame_style !== frameName),
+      ...feedbackList.filter(f => f.frame_id !== frameId),
       newFeedback
     ]
     setFeedbackList(updatedList)
 
     if (scanData && activeContext) {
-      const recs = getRecommendations(scanData, activeContext, updatedList)
+      const recs = getRecommendations(scanData, activeContext, updatedList, contextId || undefined)
       setRecommendations(recs)
-
     }
 
     setHasFeedback(true)
@@ -211,7 +215,8 @@ export default function ResultsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user_id: session.user.id,
-        frame_style: frameName,
+        frame_id: frameId,
+        frame_style: frameStyle,
         signal_type: signalType,
         context_id: contextId || null,
       })
@@ -302,7 +307,7 @@ export default function ResultsPage() {
         setTopFrames(frames)
         setScanData(scanWithProbs)
 
-        const recs = getRecommendations(scanWithProbs, context || {}, feedbackList)
+        const recs = getRecommendations(scanWithProbs, context || {}, feedbackList, contextId || undefined)
         setRecommendations(recs)
       }
       if (context) setActiveContext(context)
@@ -448,8 +453,8 @@ export default function ResultsPage() {
                 )
                   .map(frame => {
                     let feedbackBonus = 0
-                    if (feedbacks[frame.style] === 'like') feedbackBonus += 15
-                    if (feedbacks[frame.style] === 'dislike') feedbackBonus -= 25
+                    if (feedbacks[frame.id] === 'like') feedbackBonus += 15
+                    if (feedbacks[frame.id] === 'dislike') feedbackBonus -= 25
                     feedbackList.forEach(fb => {
                       const SIMILARITY: Record<string, Record<string, number>> = {
                         'Rond': { 'Ovale fin': 0.8, 'Rond fin': 0.9 },
@@ -508,19 +513,19 @@ export default function ResultsPage() {
                   {session && (
                     <div className="flex gap-2 pt-3 border-t border-gray-100">
                       <button
-                        onClick={() => sendFeedback(frame.style, 'like')}
+                        onClick={() => sendFeedback(frame.id, frame.style, 'like')}
                         className="flex-1 py-3 md:py-2 rounded-lg border text-base transition-all"
                         style={{
-                          borderColor: feedbacks[frame.style] === 'like' ? '#10B981' : '#E2E8F0',
-                          background: feedbacks[frame.style] === 'like' ? '#D1FAE5' : 'white'
+                          borderColor: feedbacks[frame.id] === 'like' ? '#10B981' : '#E2E8F0',
+                          background: feedbacks[frame.id] === 'like' ? '#D1FAE5' : 'white'
                         }}
                       >👍</button>
                       <button
-                        onClick={() => sendFeedback(frame.style, 'dislike')}
+                        onClick={() => sendFeedback(frame.id, frame.style, 'dislike')}
                         className="flex-1 py-3 md:py-2 rounded-lg border text-base transition-all"
                         style={{
-                          borderColor: feedbacks[frame.style] === 'dislike' ? '#EF4444' : '#E2E8F0',
-                          background: feedbacks[frame.style] === 'dislike' ? '#FEE2E2' : 'white'
+                          borderColor: feedbacks[frame.id] === 'dislike' ? '#EF4444' : '#E2E8F0',
+                          background: feedbacks[frame.id] === 'dislike' ? '#FEE2E2' : 'white'
                         }}
                       >👎</button>
                     </div>

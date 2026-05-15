@@ -222,7 +222,7 @@ export default function NewContextPage() {
 
       const contextId = newContext.context?.id || newContext.id
       if (scan) {
-        router.push(`/results?contextId=${contextId}&shape=${scan.face_shape}&confidence=${scan.confidence}&ipd=${scan.ipd}&ratio=${scan.ratio}&gender=${scan.gender || 'Male'}&from=context`)
+        router.push(`/discovery?contextId=${contextId}&shape=${scan.face_shape}&confidence=${scan.confidence}&ipd=${scan.ipd}&ratio=${scan.ratio}&gender=${scan.gender || 'Male'}`)
       } else {
         router.push(`/opticians?contextId=${contextId}`)
       }

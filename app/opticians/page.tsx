@@ -202,6 +202,7 @@ export default function OpticiansPage() {
   const [showBanner, setShowBanner] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+  const [feedbackList, setFeedbackList] = useState<any[]>([])
   const contextAppliedRef = useRef(false)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const mapRefMobile = useRef<mapboxgl.Map | null>(null)
@@ -235,6 +236,16 @@ export default function OpticiansPage() {
     'Sport': '🏃',
     'Fashion': '☀️',
   }
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    supabase
+      .from('feedback')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setFeedbackList(data) })
+  }, [session])
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -311,7 +322,7 @@ export default function OpticiansPage() {
               ? JSON.parse(scanData.top_shapes)
               : undefined,
           }
-          const recs = getRecommendations(scanWithProbs, ctx)
+          const recs = getRecommendations(scanWithProbs, ctx, feedbackList, contextIdFromUrl || undefined)
           const frameNames = recs
             .map(r => r.name)
             .filter((v, i, a) => a.indexOf(v) === i)
@@ -354,7 +365,7 @@ export default function OpticiansPage() {
           ? JSON.parse(scanData.top_shapes)
           : undefined,
       }
-      const recs = getRecommendations(scanWithProbs, newActive)
+      const recs = getRecommendations(scanWithProbs, newActive, feedbackList, contextId || undefined)
       const frameNames = recs
         .map(r => r.name)
         .filter((v, i, a) => a.indexOf(v) === i)

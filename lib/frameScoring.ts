@@ -149,7 +149,17 @@ export function scoreFrame(frame: Frame, scan: ScanData, context: ContextData): 
   if (scan.age) {
     const age = scan.age
 
-    if (age < 25) {
+    if (age < 12) {
+      if (frame.total_width < 120) score += 15
+      if (frame.weight_grams < 15) score += 10
+      if (frame.style_tags.some((t: string) => ['Coloré', 'Accessible'].includes(t))) score += 8
+      if (['Wayfarer', 'Rond', 'Rectangulaire'].includes(frame.style)) score += 8
+      if (frame.price_range === '300€+') score -= 20
+    } else if (age >= 12 && age < 18) {
+      if (['Wayfarer', 'Cat-eye', 'Géométrique', 'Rond'].includes(frame.style)) score += 8
+      if (frame.style_tags.some((t: string) => ['Streetwear', 'Coloré', 'Accessible'].includes(t))) score += 6
+      if (frame.price_range === '300€+') score -= 10
+    } else if (age < 25) {
       if (['Oversized', 'Géométrique', 'Cat-eye', 'Wayfarer'].includes(frame.style)) score += 8
       if (frame.style_tags.some(t => ['Coloré', 'Streetwear', 'Avant-garde'].includes(t))) score += 5
       if (['Browline', 'Clubmaster', 'Rimless'].includes(frame.style)) score -= 4

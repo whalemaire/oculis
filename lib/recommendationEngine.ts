@@ -35,6 +35,7 @@ export type UserFeedback = {
   signal_type: string
   weight: number
   created_at: string
+  context_id?: string
 }
 
 export type FrameRecommendation = {
@@ -119,7 +120,8 @@ const EXPLANATIONS: Record<string, string> = {
 export function getRecommendations(
   scan: FaceScan,
   context: Context,
-  feedbacks: UserFeedback[] = []
+  feedbacks: UserFeedback[] = [],
+  currentContextId?: string
 ): FrameRecommendation[] {
   const scores: Record<string, number> = {}
 
@@ -486,7 +488,8 @@ export function getRecommendations(
 
     feedbacks.forEach(fb => {
       const decay = getDecayFactor(fb.created_at)
-      const effectiveWeight = fb.weight * decay
+      const contextBonus = fb.context_id && fb.context_id === currentContextId ? 1.5 : 1.0
+      const effectiveWeight = fb.weight * decay * contextBonus
 
       if (feedbackBonus[fb.frame_style] !== undefined) {
         feedbackBonus[fb.frame_style] += effectiveWeight * 10
