@@ -210,8 +210,8 @@ export default function ResultsPage() {
           : scanData.shape_probabilities)
         : undefined
       const frames = getTopFrames(
-        { ...scanData, shape_probabilities: shapeProbs },
-        activeContext,
+        { ...scanData, ratio_symmetry: scanData.ratio_symmetry, shape_probabilities: shapeProbs },
+        activeContext || {},
         6
       )
       setTopFrames(frames)

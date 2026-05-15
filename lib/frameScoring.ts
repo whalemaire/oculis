@@ -7,6 +7,7 @@ type ScanData = {
   ratio: number
   nose_width?: number
   ratio_cheek_jaw?: number
+  ratio_symmetry?: number
   shape_probabilities?: Record<string, number>
   gender?: string
   age?: number
@@ -91,6 +92,17 @@ export function scoreFrame(frame: Frame, scan: ScanData, context: ContextData): 
   } else {
     const compat = shapeCompatibility[frame.style] || {}
     score += compat[scan.face_shape] || 12
+  }
+
+  // === SYMÉTRIE (5 points max) ===
+  if (scan.ratio_symmetry) {
+    if (scan.ratio_symmetry < 0.75) {
+      if (['Browline', 'Clubmaster'].includes(frame.style)) score += 5
+      if (['Aviateur', 'Rectangulaire'].includes(frame.style)) score += 3
+      if (['Cat-eye', 'Oversized'].includes(frame.style)) score -= 4
+    } else if (scan.ratio_symmetry > 0.90) {
+      if (['Géométrique', 'Rimless'].includes(frame.style)) score += 4
+    }
   }
 
   // === MATCHING CONTEXTUEL (50%) ===

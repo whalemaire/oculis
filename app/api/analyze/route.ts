@@ -53,9 +53,22 @@ export async function POST(request: Request) {
   const ratioForeheadFace = round(foreheadWidth / faceWidth)
   const ratioChinFace     = round(chinHeight / faceHeight)
 
-  const leftHalfWidth  = dist(l.contour_left5,  { x: (l.contour_left5.x + l.contour_right5.x) / 2, y: (l.contour_left5.y + l.contour_right5.y) / 2 })
-  const rightHalfWidth = dist(l.contour_right5, { x: (l.contour_left5.x + l.contour_right5.x) / 2, y: (l.contour_left5.y + l.contour_right5.y) / 2 })
-  const symmetryScore  = Math.round((1 - Math.abs(leftHalfWidth - rightHalfWidth) / faceWidth) * 1000) / 1000
+  const noseX = l.nose_tip.x
+
+  const leftCheekDist  = Math.abs(noseX - l.contour_left5.x)
+  const rightCheekDist = Math.abs(l.contour_right5.x - noseX)
+  const leftJawDist    = Math.abs(noseX - l.contour_left3.x)
+  const rightJawDist   = Math.abs(l.contour_right3.x - noseX)
+  const leftEyeDist    = Math.abs(noseX - l.left_eye_center.x)
+  const rightEyeDist   = Math.abs(l.right_eye_center.x - noseX)
+
+  const cheekSym = 1 - Math.abs(leftCheekDist - rightCheekDist) / Math.max(leftCheekDist, rightCheekDist)
+  const jawSym   = 1 - Math.abs(leftJawDist - rightJawDist) / Math.max(leftJawDist, rightJawDist)
+  const eyeSym   = 1 - Math.abs(leftEyeDist - rightEyeDist) / Math.max(leftEyeDist, rightEyeDist)
+
+  const symmetryScore = Math.round(((cheekSym + jawSym + eyeSym) / 3) * 1000) / 1000
+
+  console.log('Symétrie détaillée:', { cheekSym, jawSym, eyeSym, symmetryScore })
 
   // Système probabiliste — chaque forme reçoit un score 0-100
   const shapeScores = {
