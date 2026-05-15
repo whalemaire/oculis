@@ -100,19 +100,22 @@ export async function POST(request: Request) {
   if (ratioCheekJaw < 0.88) shapeScores.square += 25
   if (ratioJawForehead > 1.20 && ratioHeightWidth < 1.10) shapeScores.square += 20
 
-  // --- HEART (15% population) ---
-  // Front large, mâchoire étroite, menton pointu
+  // --- HEART — critères plus précis ---
+  // Cœur = front large + mâchoire étroite + menton pointu
   if (ratioForeheadFace > 0.88) shapeScores.heart += 30
   if (ratioJawForehead < 0.82) shapeScores.heart += 35
   if (ratioCheekJaw > 1.10) shapeScores.heart += 20
   if (ratioJawForehead < 0.75) shapeScores.heart += 15
+  if (ratioChinFace < 0.18) shapeScores.heart += 15
+  if (foreheadWidth > faceWidth * 0.92) shapeScores.heart += 10
 
-  // --- OBLONG (10% population) ---
-  // Très allongé, proportions stables en largeur
+  // --- OBLONG — critères plus précis ---
+  // Oblong = très allongé + largeurs homogènes de haut en bas
   if (ratioHeightWidth > 1.45) shapeScores.oblong += 45
   if (ratioHeightWidth > 1.55) shapeScores.oblong += 25
-  if (ratioJawForehead >= 0.85 && ratioJawForehead <= 1.10) shapeScores.oblong += 20
-  if (ratioCheekJaw >= 0.90 && ratioCheekJaw <= 1.10) shapeScores.oblong += 10
+  if (Math.abs(ratioJawForehead - 1.0) < 0.10) shapeScores.oblong += 20
+  if (Math.abs(ratioCheekJaw - 1.0) < 0.10) shapeScores.oblong += 15
+  if (ratioHeightWidth < 1.35) shapeScores.oblong = Math.round(shapeScores.oblong * 0.3)
 
   // Pénalités croisées
   if (ratioHeightWidth > 1.25) {

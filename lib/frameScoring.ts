@@ -335,13 +335,75 @@ export function scoreFrame(frame: Frame, scan: ScanData, context: ContextData): 
   return Math.min(98, Math.max(0, normalized))
 }
 
-export function getTopFrames(
-  scan: ScanData,
-  context: ContextData,
-  limit: number = 10
-): (Frame & { score: number })[] {
+function getConfidenceLevel(score: number): { label: string, color: string } {
+  if (score >= 88) return { label: 'Excellent match', color: '#10B981' }
+  if (score >= 78) return { label: 'Très bon match', color: '#3B82F6' }
+  if (score >= 68) return { label: 'Bon match', color: '#8B5CF6' }
+  return { label: 'Match partiel', color: '#F59E0B' }
+}
+
+function getExplanation(frame: Frame, scan: ScanData, context: ContextData, _score: number): string {
+  const reasons: string[] = []
+
+  if (scan.ipd && scan.face_width) {
+    const idealLensWidth = scan.ipd * 0.42
+    const diff = Math.abs(frame.lens_width - idealLensWidth)
+    if (diff < 4) reasons.push(`Largeur parfaite pour ton IPD (${frame.lens_width}mm)`)
+    else if (diff < 8) reasons.push(`Bon fitting pour ton visage`)
+  }
+
+  if (context.correction) {
+    if (frame.correction_types.includes(context.correction)) {
+      reasons.push(`Compatible ${context.correction.toLowerCase()}`)
+    } else if (context.correction === 'Les deux' && frame.correction_types.length >= 2) {
+      reasons.push(`Disponible en vue et soleil`)
+    }
+  }
+
+  if (context.style && frame.style_tags.includes(context.style)) {
+    reasons.push(`Style ${context.style.toLowerCase()} confirmé`)
+  }
+
+  if (context.frame_weight === 'Légères' && frame.weight_grams < 15) {
+    reasons.push(`Ultra légère (${frame.weight_grams}g)`)
+  } else if (frame.weight_grams < 12) {
+    reasons.push(`Très légère (${frame.weight_grams}g)`)
+  }
+
+  if (context.budget && frame.price_range === context.budget) {
+    reasons.push(`Dans ton budget (${frame.price_range})`)
+  }
+
+  if (context.material && context.material !== 'Peu importe' && frame.material === context.material) {
+    reasons.push(`Matière ${frame.material.toLowerCase()} préférée`)
+  }
+
+  if (context.brands === 'Marques connues' && ['Ray-Ban', 'Persol', 'Oakley', 'Tom Ford', 'Gucci', 'Prada', 'Dior'].includes(frame.brand)) {
+    reasons.push(`Marque reconnue (${frame.brand})`)
+  }
+
+  if (reasons.length === 0) {
+    if (scan.shape_probabilities) {
+      const topShape = Object.entries(scan.shape_probabilities as Record<string, number>)
+        .sort(([, a], [, b]) => b - a)[0][0]
+      const shapeNames: Record<string, string> = { oval: 'ovale', round: 'rond', square: 'carré', heart: 'cœur', oblong: 'allongé' }
+      reasons.push(`Forme ${frame.style} adaptée à ton visage ${shapeNames[topShape] || topShape}`)
+    } else {
+      reasons.push(`Recommandé selon ton profil morphologique`)
+    }
+  }
+
+  return reasons.slice(0, 2).join(' · ')
+}
+
+export function getTopFrames(scan: ScanData, context: ContextData, limit: number = 10) {
   return FRAMES_CATALOG
-    .map(frame => ({ ...frame, score: scoreFrame(frame, scan, context) }))
+    .map(frame => {
+      const score = scoreFrame(frame, scan, context)
+      const confidence = getConfidenceLevel(score)
+      const explanation = getExplanation(frame, scan, context, score)
+      return { ...frame, score, confidence, explanation }
+    })
     .filter(frame => frame.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)

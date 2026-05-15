@@ -502,9 +502,21 @@ export default function ResultsPage() {
             {topFrames.map((frame) => (
               <div key={frame.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                 <div className="bg-gray-50 p-8 flex items-center justify-center relative">
-                  <span className="absolute top-3 right-3 bg-[#102A72] text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                    {frame.score}%
-                  </span>
+                  {frame.confidence && (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      color: frame.confidence.color,
+                      background: `${frame.confidence.color}15`,
+                      padding: '3px 8px',
+                      borderRadius: '100px',
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px'
+                    }}>
+                      {frame.confidence.label}
+                    </span>
+                  )}
                   {framesvg(frame.style)}
                 </div>
                 <div className="p-4">
@@ -513,8 +525,14 @@ export default function ResultsPage() {
                       <p className="text-xs text-gray-400 font-medium">{frame.brand}</p>
                       <h3 className="font-bold text-[#0A2540]">{frame.model}</h3>
                     </div>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#1E3A8A' }}>{frame.score}%</span>
                   </div>
                   <p className="text-xs text-gray-400 mb-2">{frame.material} · {frame.weight_grams}g · {frame.price_range}</p>
+                  {frame.explanation && (
+                    <p style={{ fontSize: '11px', color: '#64748B', marginTop: '6px', lineHeight: 1.4, marginBottom: '8px' }}>
+                      💡 {frame.explanation}
+                    </p>
+                  )}
                   <div className="w-full h-1.5 bg-gray-100 rounded-full mb-3">
                     <div
                       className="h-1.5 bg-[#102A72] rounded-full"
