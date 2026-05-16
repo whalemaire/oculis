@@ -124,7 +124,34 @@ export default function ScanPage() {
       if (from === 'profile') {
         router.push('/profile?updated=true')
       } else {
-        router.push(`/discovery?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.measurements?.ipd ?? data.ipd}&ratio=${data.ratios?.heightWidth ?? data.ratio}&gender=${data.gender}`)
+        if (!session?.user?.id) {
+          const params = new URLSearchParams({
+            from: 'scan',
+            shape: data.faceShape,
+            confidence: String(data.confidence),
+            gender: data.gender || 'Male',
+            age: String(data.age || 25),
+            ipd: String(data.measurements?.ipd || 64),
+            ratio: String(data.ratios?.heightWidth || 1.0),
+            face_width: String(data.measurements?.faceWidth || 0),
+            face_height: String(data.measurements?.faceHeight || 0),
+            forehead_width: String(data.measurements?.foreheadWidth || 0),
+            jaw_width: String(data.measurements?.jawWidth || 0),
+            cheek_width: String(data.measurements?.cheekWidth || 0),
+            nose_width: String(data.measurements?.noseWidth || 0),
+            nose_length: String(data.measurements?.noseLength || 0),
+            chin_height: String(data.measurements?.chinHeight || 0),
+            ratio_jaw_forehead: String(data.ratios?.jawForehead || 0),
+            ratio_cheek_jaw: String(data.ratios?.cheekJaw || 0),
+            ratio_nose_face: String(data.ratios?.noseFace || 0),
+            ratio_eye_spacing: String(data.ratios?.eyeSpacing || 0),
+            ratio_symmetry: String(data.ratios?.symmetry || 1),
+            shape_probabilities: JSON.stringify(data.shapeProbabilities || {}),
+          })
+          router.push(`/register?${params.toString()}`)
+        } else {
+          router.push(`/discovery?shape=${data.faceShape}&confidence=${data.confidence}&ipd=${data.measurements?.ipd ?? data.ipd}&ratio=${data.ratios?.heightWidth ?? data.ratio}&gender=${data.gender}`)
+        }
       }
     } catch {
       setError('Une erreur est survenue — réessaie')

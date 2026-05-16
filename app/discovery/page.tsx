@@ -10,13 +10,22 @@ import { getTopFrames } from '@/lib/frameScoring'
 
 type Step = 'celebrities' | 'swipe' | 'continue'
 
-const CELEBRITY_SLIDES = [
-  { name: 'Brad Pitt',       style: 'Rectangulaire', shape: 'square', image: '🎬', description: 'Visage carré · Style classique' },
-  { name: 'Tom Ford',        style: 'Aviateur',      shape: 'square', image: '👔', description: 'Visage carré · Style premium' },
-  { name: 'Ryan Gosling',    style: 'Wayfarer',      shape: 'oval',   image: '🎭', description: 'Visage ovale · Style moderne' },
-  { name: 'Bella Hadid',     style: 'Cat-eye',       shape: 'oval',   image: '💫', description: 'Visage ovale · Style fashion' },
-  { name: 'Angelina Jolie',  style: 'Aviateur',      shape: 'square', image: '⭐', description: 'Visage carré · Style iconique' },
-]
+const CELEBRITY_SLIDES_BY_GENDER = {
+  male: [
+    { name: 'Brad Pitt',      style: 'Rectangulaire', image: '🎬', description: 'Visage carré · Style classique' },
+    { name: 'Ryan Gosling',   style: 'Wayfarer',      image: '🎭', description: 'Visage ovale · Style moderne' },
+    { name: 'Tom Hardy',      style: 'Aviateur',      image: '💪', description: 'Visage carré · Style premium' },
+    { name: 'David Beckham',  style: 'Rectangulaire', image: '⚽', description: 'Visage ovale · Style iconique' },
+    { name: 'Keanu Reeves',   style: 'Rond',          image: '🕶️', description: 'Visage allongé · Style décontracté' },
+  ],
+  female: [
+    { name: 'Bella Hadid',      style: 'Cat-eye',      image: '💫', description: 'Visage ovale · Style fashion' },
+    { name: 'Angelina Jolie',   style: 'Aviateur',     image: '⭐', description: 'Visage carré · Style iconique' },
+    { name: 'Beyoncé',          style: 'Oversized',    image: '👑', description: 'Visage ovale · Style glamour' },
+    { name: 'Audrey Hepburn',   style: 'Cat-eye',      image: '🌟', description: 'Visage ovale · Style élégant' },
+    { name: 'Rihanna',          style: 'Géométrique',  image: '🎵', description: 'Visage cœur · Style avant-garde' },
+  ]
+}
 
 export default function DiscoveryPage() {
   const router = useRouter()
@@ -38,6 +47,7 @@ export default function DiscoveryPage() {
   const [likes, setLikes]             = useState<string[]>([])
   const [dislikes, setDislikes]       = useState<string[]>([])
   const [swipeFrames, setSwipeFrames] = useState<any[]>([])
+  const [celebritySlides, setCelebritySlides] = useState(CELEBRITY_SLIDES_BY_GENDER.male)
   const [dragX, setDragX]             = useState(0)
   const [isDragging, setIsDragging]   = useState(false)
   const dragStartX = useRef(0)
@@ -47,7 +57,7 @@ export default function DiscoveryPage() {
     if (step !== 'celebrities') return
     const interval = setInterval(() => {
       setCurrentSlide(prev => {
-        if (prev >= CELEBRITY_SLIDES.length - 1) {
+        if (prev >= celebritySlides.length - 1) {
           clearInterval(interval)
           setTimeout(() => setShowSummary(true), 500)
           return prev
@@ -61,36 +71,60 @@ export default function DiscoveryPage() {
   // Charger scan + contexte → calculer swipeFrames
   useEffect(() => {
     if (!session?.user?.id) return
-    const load = async () => {
+
+    const loadFrames = async () => {
       const { data: scanArray } = await supabase
         .from('scan')
         .select('*')
         .eq('user_id', session.user.id)
-        .order('id', { ascending: false })
         .limit(1)
-      const scan = scanArray?.[0]
-      if (!scan) return
 
-      const scanWithProbs = {
-        ...scan,
-        shape_probabilities: scan.shape_probabilities
-          ? (typeof scan.shape_probabilities === 'string' ? JSON.parse(scan.shape_probabilities) : scan.shape_probabilities)
-          : undefined,
-        top_shapes: scan.top_shapes
-          ? (typeof scan.top_shapes === 'string' ? JSON.parse(scan.top_shapes) : scan.top_shapes)
-          : undefined,
+      const scan = scanArray?.[0]
+      if (!scan) {
+        console.log('No scan found')
+        return
       }
+
+      console.log('Scan loaded:', scan.face_shape, scan.gender)
+
+      const genderKey = scan?.gender === 'Female' ? 'female' : 'male'
+      setCelebritySlides(CELEBRITY_SLIDES_BY_GENDER[genderKey])
 
       let context = {}
       if (contextId) {
-        const { data: ctxData } = await supabase.from('context').select('*').eq('id', contextId).limit(1)
-        if (ctxData?.[0]) context = ctxData[0]
+        const { data: ctx } = await supabase
+          .from('context')
+          .select('*')
+          .eq('id', contextId)
+          .single()
+        if (ctx) context = ctx
       }
 
-      const frames = getTopFrames(scanWithProbs, context as any, 20)
+      let parsedProbs = undefined
+      try {
+        const raw = scan.shape_probabilities
+        if (typeof raw === 'string') {
+          const parsed = JSON.parse(raw)
+          parsedProbs = typeof parsed === 'string' ? JSON.parse(parsed) : parsed
+        } else if (typeof raw === 'object') {
+          parsedProbs = raw
+        }
+      } catch (e) {
+        console.log('Error parsing shape_probabilities:', e)
+      }
+
+      const scanWithProbs = {
+        ...scan,
+        shape_probabilities: parsedProbs
+      }
+
+      console.log('parsedProbs:', parsedProbs)
+      const frames = getTopFrames(scanWithProbs, context, 20)
+      console.log('Frames result:', frames.length)
       setSwipeFrames(frames)
     }
-    load()
+
+    loadFrames()
   }, [session, contextId])
 
   const currentFrame = swipeFrames[swipeIndex]
@@ -141,7 +175,7 @@ export default function DiscoveryPage() {
           <h1 style={{ color: 'white', fontSize: '24px', fontWeight: '800', textAlign: 'center', marginBottom: '32px' }}>Ces personnalités iconiques</h1>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '40px', width: '100%', maxWidth: '320px' }}>
-            {CELEBRITY_SLIDES.map((celeb, i) => (
+            {celebritySlides.map((celeb, i) => (
               <div key={i} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '16px', padding: '16px', textAlign: 'center', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}>
                 <div style={{ fontSize: '32px', marginBottom: '8px' }}>{celeb.image}</div>
                 <p style={{ color: 'white', fontSize: '11px', fontWeight: '600', lineHeight: 1.3 }}>{celeb.name}</p>
@@ -166,19 +200,19 @@ export default function DiscoveryPage() {
           Des personnalités comme toi portent
         </p>
         <h1 style={{ color: 'white', fontSize: '28px', fontWeight: '800', textAlign: 'center', marginBottom: '40px' }}>
-          Des montures {CELEBRITY_SLIDES[currentSlide].style}
+          Des montures {celebritySlides[currentSlide].style}
         </h1>
 
         {/* Card célébrité */}
         <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '24px', padding: '32px', textAlign: 'center', width: '280px', marginBottom: '40px', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', transition: 'all 0.5s ease' }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>{CELEBRITY_SLIDES[currentSlide].image}</div>
-          <h2 style={{ color: 'white', fontSize: '22px', fontWeight: '700', marginBottom: '8px' }}>{CELEBRITY_SLIDES[currentSlide].name}</h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{CELEBRITY_SLIDES[currentSlide].description}</p>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>{celebritySlides[currentSlide].image}</div>
+          <h2 style={{ color: 'white', fontSize: '22px', fontWeight: '700', marginBottom: '8px' }}>{celebritySlides[currentSlide].name}</h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>{celebritySlides[currentSlide].description}</p>
         </div>
 
         {/* Dots */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '40px' }}>
-          {CELEBRITY_SLIDES.map((_, i) => (
+          {celebritySlides.map((_, i) => (
             <div key={i} style={{ width: i === currentSlide ? '24px' : '8px', height: '8px', borderRadius: '100px', background: i === currentSlide ? 'white' : 'rgba(255,255,255,0.3)', transition: 'all 0.3s ease' }} />
           ))}
         </div>

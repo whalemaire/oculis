@@ -136,6 +136,7 @@ export default function ResultsPage() {
   const [feedbackToast, setFeedbackToast] = useState<{ message: string, type: 'like' | 'dislike' } | null>(null)
   const [topFrames, setTopFrames] = useState<any[]>([])
   const [hasFeedback, setHasFeedback] = useState(false)
+  const [celebrities, setCelebrities] = useState<{ name: string, profession: string }[]>([])
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -245,7 +246,6 @@ export default function ResultsPage() {
   const ratio = params.get('ratio') ?? '1.10'
   const gender = params.get('gender') === 'Female' ? 'female' : 'male'
   const shapeLabel = shape.charAt(0).toUpperCase() + shape.slice(1) + ' Face'
-  const celebrities = CELEBRITIES[shape as keyof typeof CELEBRITIES]?.[gender] || CELEBRITIES.oval.male
   // UseEffect 1 — sans session, utilise les params URL
   useEffect(() => {
     if (session) return
@@ -290,12 +290,33 @@ export default function ResultsPage() {
       console.log('Loading results with context:', context?.name, 'contextId from URL:', contextId)
 
       if (scan) {
+        const defaultContext = {
+          style: 'Classique',
+          usage: 'Quotidien',
+          correction: 'Vue',
+          budget: '100-300€',
+          material: 'Peu importe',
+          frame_weight: 'Peu importe',
+          colors: 'Neutres',
+          personality: 'Discret',
+          wearing_frequency: 'Quotidien',
+          existing_glasses: 'Première paire',
+          brands: 'Peu importe',
+        }
+
+        const contextToUse = context || defaultContext
+
         const scanWithProbs = {
           ...scan,
           shape_probabilities: scan.shape_probabilities
-            ? (typeof scan.shape_probabilities === 'string'
-              ? JSON.parse(scan.shape_probabilities)
-              : scan.shape_probabilities)
+            ? (() => {
+                try {
+                  const parsed = typeof scan.shape_probabilities === 'string'
+                    ? JSON.parse(scan.shape_probabilities)
+                    : scan.shape_probabilities
+                  return typeof parsed === 'string' ? JSON.parse(parsed) : parsed
+                } catch { return undefined }
+              })()
             : undefined,
           top_shapes: scan.top_shapes
             ? (typeof scan.top_shapes === 'string'
@@ -303,29 +324,18 @@ export default function ResultsPage() {
               : scan.top_shapes)
             : undefined,
         }
-        const frames = getTopFrames(
-          {
-            face_shape: scanWithProbs.face_shape,
-            ipd: scanWithProbs.ipd,
-            face_width: scanWithProbs.face_width,
-            ratio: scanWithProbs.ratio,
-            nose_width: scanWithProbs.nose_width,
-            ratio_cheek_jaw: scanWithProbs.ratio_cheek_jaw,
-            shape_probabilities: scanWithProbs.shape_probabilities,
-            gender: scanWithProbs.gender,
-            age: scanWithProbs.age,
-            chin_height: scanWithProbs.chin_height,
-            forehead_width: scanWithProbs.forehead_width,
-            nose_length: scanWithProbs.nose_length,
-            face_height: scanWithProbs.face_height,
-          },
-          context || {},
-          6
-        )
+
+        const frames = getTopFrames(scanWithProbs, contextToUse, 6)
+        console.log('Frames loaded:', frames.length, frames.map(f => `${f.model}:${f.score}`))
         setTopFrames(frames)
         setScanData(scanWithProbs)
 
-        const recs = getRecommendations(scanWithProbs, context || {}, feedbackList, contextId || undefined)
+        const genderFromScan = scan.gender || 'Male'
+        const genderKey = genderFromScan === 'Female' ? 'female' : 'male'
+        const scanShape = (scan.face_shape || shape).toLowerCase()
+        setCelebrities(CELEBRITIES[scanShape as keyof typeof CELEBRITIES]?.[genderKey] || CELEBRITIES.oval.male)
+
+        const recs = getRecommendations(scanWithProbs, contextToUse, feedbackList, contextId || undefined)
         setRecommendations(recs)
       }
       if (context) setActiveContext(context)
@@ -610,12 +620,23 @@ export default function ResultsPage() {
                 </button>
               )}
               {session && !hasContext && (
-                <button
-                  onClick={() => router.push('/contexts/new')}
-                  className="w-full bg-[#102A72] text-white py-4 rounded-xl font-semibold text-base"
-                >
-                  Créer un contexte pour affiner →
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => router.push('/contexts/new')}
+                    className="w-full bg-[#1E3A8A] text-white py-4 rounded-xl font-semibold text-base"
+                  >
+                    🎯 Créer un contexte pour affiner →
+                  </button>
+                  <button
+                    onClick={() => {
+                      const frameStyles = topFrames.slice(0, 3).map(f => f.style).filter((v, i, a) => a.indexOf(v) === i).join(',')
+                      router.push(`/opticians?frames=${encodeURIComponent(frameStyles)}`)
+                    }}
+                    className="w-full border border-[#1E3A8A] text-[#1E3A8A] py-4 rounded-xl font-semibold text-base"
+                  >
+                    🗺️ Voir les opticiens →
+                  </button>
+                </div>
               )}
             </>
           )}

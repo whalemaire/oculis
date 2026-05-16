@@ -2,13 +2,22 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { FiglaLogo } from '@/app/components/FiglaLogo'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const scanParams = searchParams.get('from') === 'scan' ? {
+    shape: searchParams.get('shape'),
+    confidence: searchParams.get('confidence'),
+    ipd: searchParams.get('ipd'),
+    ratio: searchParams.get('ratio'),
+    gender: searchParams.get('gender'),
+  } : null
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -40,15 +49,43 @@ export default function RegisterPage() {
     } else {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user?.id) {
-        const { data: scans } = await supabase
-          .from('scan')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .limit(1)
-        if (!scans || scans.length === 0) {
-          router.push('/scan')
+        if (scanParams?.shape) {
+          await fetch('/api/scans', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: session.user.id,
+              face_shape: searchParams.get('shape'),
+              confidence: Number(searchParams.get('confidence')) || 85,
+              gender: searchParams.get('gender') || 'Male',
+              age: Number(searchParams.get('age')) || 25,
+              measurements: {
+                ipd: Number(searchParams.get('ipd')),
+                faceWidth: Number(searchParams.get('face_width')),
+                faceHeight: Number(searchParams.get('face_height')),
+                foreheadWidth: Number(searchParams.get('forehead_width')),
+                jawWidth: Number(searchParams.get('jaw_width')),
+                cheekWidth: Number(searchParams.get('cheek_width')),
+                noseWidth: Number(searchParams.get('nose_width')),
+                noseLength: Number(searchParams.get('nose_length')),
+                chinHeight: Number(searchParams.get('chin_height')),
+              },
+              ratios: {
+                heightWidth: Number(searchParams.get('ratio')),
+                jawForehead: Number(searchParams.get('ratio_jaw_forehead')),
+                cheekJaw: Number(searchParams.get('ratio_cheek_jaw')),
+                noseFace: Number(searchParams.get('ratio_nose_face')),
+                eyeSpacing: Number(searchParams.get('ratio_eye_spacing')),
+                symmetry: Number(searchParams.get('ratio_symmetry')),
+              },
+              shape_probabilities: searchParams.get('shape_probabilities'),
+              top_shapes: null,
+            })
+          })
+          console.log('Scan saved for new user:', session.user.id)
+          router.push(`/discovery?shape=${scanParams.shape}&confidence=${scanParams.confidence}&ipd=${scanParams.ipd}&ratio=${scanParams.ratio}&gender=${scanParams.gender}`)
         } else {
-          router.push('/contexts/new')
+          router.push('/scan')
         }
       }
     }

@@ -268,23 +268,30 @@ export default function ProfilePage() {
                         </span>
                       </div>
 
-                      {scanData.shape_probabilities && (() => {
-                        const probs = typeof scanData.shape_probabilities === 'string'
-                          ? JSON.parse(scanData.shape_probabilities)
-                          : scanData.shape_probabilities
+                      {(() => {
+                        const raw = scanData.shape_probabilities
+                        if (!raw) return null
+                        let probs = null
+                        try {
+                          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+                          const final = typeof parsed === 'string' ? JSON.parse(parsed) : parsed
+                          if (final && typeof final === 'object' && !Array.isArray(final)) {
+                            probs = final
+                          }
+                        } catch {
+                          return null
+                        }
+                        if (!probs) return null
                         return (
                           <div className="space-y-2">
                             {Object.entries(probs)
-                              .filter(([, v]) => (v as number) > 0)
+                              .filter(([, prob]) => (prob as number) > 0)
                               .sort(([, a], [, b]) => (b as number) - (a as number))
                               .map(([shape, prob]) => (
                                 <div key={shape} className="flex items-center gap-3">
                                   <span className="text-xs text-gray-400 w-16 capitalize">{shape}</span>
                                   <div className="flex-1 h-1.5 bg-gray-100 rounded-full">
-                                    <div
-                                      className="h-1.5 bg-[#1E3A8A] rounded-full transition-all"
-                                      style={{ width: `${prob}%` }}
-                                    />
+                                    <div className="h-1.5 bg-[#1E3A8A] rounded-full" style={{ width: `${prob}%` }} />
                                   </div>
                                   <span className="text-xs font-semibold text-[#0A2540] w-8 text-right">{prob as number}%</span>
                                 </div>
@@ -495,14 +502,28 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Mot de passe */}
-                <div className="flex items-center gap-3 py-3">
-                  <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-base flex-shrink-0">🔒</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#0A2540]">Mot de passe</p>
-                    <p className="text-xs text-gray-400">Aucun mot de passe défini</p>
-                  </div>
-                  <button onClick={() => setShowPasswordForm(!showPasswordForm)} className="text-xs font-medium text-[#102A72] flex-shrink-0">Définir →</button>
-                </div>
+                {(() => {
+                  const hasPassword = session?.user?.identities?.some(
+                    (identity: any) => identity.provider === 'email'
+                  )
+                  return (
+                    <div className="flex items-center gap-3 py-3">
+                      <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-base flex-shrink-0">🔒</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#0A2540]">Mot de passe</p>
+                        <p className="text-xs text-gray-400">
+                          {hasPassword ? 'Mot de passe défini' : 'Aucun mot de passe défini'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowPasswordForm(!showPasswordForm)}
+                        className="text-xs font-medium text-[#1E3A8A] flex-shrink-0"
+                      >
+                        {hasPassword ? 'Modifier →' : 'Définir →'}
+                      </button>
+                    </div>
+                  )
+                })()}
 
                 {showPasswordForm && (
                   <div className="mt-3 space-y-2 pt-3 border-t border-gray-100">
